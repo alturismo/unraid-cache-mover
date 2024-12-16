@@ -70,12 +70,12 @@ for filetype in $filetypes
 					awk -i inplace '!seen[$0]++' $move_excl_list
 					## open todo, merge with currrent ignore list
 				fi
-				if [ "$force_fdclose" = "yes" ]; then
+				if [ "$switch_mode" = "close" ]; then
 				    echo "$directory/ open file will be closed"
 					## hard closing file descriptor path
                     fdclose $process_id $file_descr
 				fi
-				if [ "$force_fdswitch" = "yes" ]; then
+				if [ "$switch_mode" = "switch" ]; then
 				    echo "$openpath"
 					echo "open file will be switched to new path"
 					## hard switching file descriptor path
