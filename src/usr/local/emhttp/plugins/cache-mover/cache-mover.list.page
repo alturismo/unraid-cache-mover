@@ -1,0 +1,30 @@
+Menu="cache-mover:2"
+Title="CACHE MOVER LISTS"
+Tag="icon-disk"
+---
+
+<?php
+$cachemoversettings            = parse_ini_file("/boot/config/plugins/cache-mover/cachemoversettings",true);
+$cachemoversettings_move_excl_list        = isset($cachemoversettings['move_excl_list']) ? $cachemoversettings['move_excl_list'] : "";
+$cachemoversettings_move_tune_list        = isset($cachemoversettings['move_tune_list']) ? $cachemoversettings['move_tune_list'] : "";
+?>
+
+
+<?
+$file = "$cachemoversettings_move_excl_list";
+$text = @file_get_contents($file) ?: '';
+$text = preg_replace(["/\r\n/","/\r/"],"\n",$text);
+$file2 = "$cachemoversettings_move_tune_list";
+$text2 = @file_get_contents($file2) ?: '';
+$text2 = preg_replace(["/\r\n/","/\r/"],"\n",$text2);
+?>
+
+<div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover - Cached</span></div>
+<div style='border: 1px solid red; height:500px; overflow:auto;'>
+<textarea spellcheck="false" cols="120" rows="<?=substr_count($text,"\n")+1?>" maxlength="512" name="text" style="resize:none;font-family:bitstream;width:100%" <?if ($var['fsState']=="Started"):?>disabled<?endif;?>><?=htmlspecialchars($text)?></textarea></div>
+
+<div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Mover Tuning - Exluded</span></div>
+<div style='border: 1px solid red; height:500px; overflow:auto;'>
+<textarea spellcheck="false" cols="120" rows="<?=substr_count($text2,"\n")+1?>" maxlength="512" name="text2" style="resize:none;font-family:bitstream;width:100%" <?if ($var['fsState']=="Started"):?>disabled<?endif;?>><?=htmlspecialchars($text2)?></textarea></div>
+
+</form>

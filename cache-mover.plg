@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "cache-mover">
 <!ENTITY author    "alturismo">
-<!ENTITY version   "2024.12.17d">
+<!ENTITY version   "2024.12.17e">
 <!ENTITY launch    "Settings/cache-mover">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/alturismo/unraid-cache-mover/master">
 <!ENTITY pluginURL "&gitURL;/&name;.plg">
@@ -20,6 +20,9 @@
         support="https://forums.unraid.net/topic/181843-support-alturismo-repos/">
  
 <CHANGES>
+ ###2024.12.17e
+  - added list page for cached dirs and current mover tuning exluded list
+
  ###2024.12.17d
   - fixes due changes
   - max chars for filepath fixed
