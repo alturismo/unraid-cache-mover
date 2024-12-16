@@ -1,0 +1,232 @@
+Menu="Utilities"
+Type="xmenu"
+Title="CACHE-MOVER"
+Icon="cache-mover.png"
+Tag="icon-disk"
+Tabs="true"
+---
+<?php
+$cachemoversettings            = parse_ini_file("/boot/config/plugins/cache-mover/cachemoversettings",true);
+$cachemoversettings_disks        = isset($cachemoversettings['disks']) ? $cachemoversettings['disks'] : "";
+$cachemoversettings_pool        = isset($cachemoversettings['pool']) ? $cachemoversettings['pool'] : "";
+$cachemoversettings_subfolders        = isset($cachemoversettings['subfolders']) ? $cachemoversettings['subfolders'] : "";
+$cachemoversettings_filetypes        = isset($cachemoversettings['filetypes']) ? $cachemoversettings['filetypes'] : "";
+$cachemoversettings_wait_todo        = isset($cachemoversettings['wait_todo']) ? $cachemoversettings['wait_todo'] : "";
+$cachemoversettings_move_excl        = isset($cachemoversettings['move_excl']) ? $cachemoversettings['move_excl'] : "";
+$cachemoversettings_move_excl_list        = isset($cachemoversettings['move_excl_list']) ? $cachemoversettings['move_excl_list'] : "";
+$cachemoversettings_move_tune_list        = isset($cachemoversettings['move_tune_list']) ? $cachemoversettings['move_tune_list'] : "";
+$cachemoversettings_rsync_mode        = isset($cachemoversettings['rsync_mode']) ? $cachemoversettings['rsync_mode'] : "";
+$cachemoversettings_rsync_move        = isset($cachemoversettings['rsync_move']) ? $cachemoversettings['rsync_move'] : "";
+$cachemoversettings_rsync_copy        = isset($cachemoversettings['rsync_copy']) ? $cachemoversettings['rsync_copy'] : "";
+$cachemoversettings_switch_mode        = isset($cachemoversettings['switch_mode']) ? $cachemoversettings['switch_mode'] : "";
+$cachemoversettings_time_keephours        = isset($cachemoversettings['time_keephours']) ? $cachemoversettings['time_keephours'] : "";
+$cachemoversettings_time_keephours_sub        = isset($cachemoversettings['time_keephours_sub']) ? $cachemoversettings['time_keephours_sub'] : "";
+$cachemoversettings_subfolder_keep_sub        = isset($cachemoversettings['subfolder_keep_sub']) ? $cachemoversettings['subfolder_keep_sub'] : "";
+$cachemoversettings_target_keephours        = isset($cachemoversettings['target_keephours']) ? $cachemoversettings['target_keephours'] : "";
+$cachemoversettings_use_recycle        = isset($cachemoversettings['use_recycle']) ? $cachemoversettings['use_recycle'] : "";
+$cachemoversettings_recycle_folder        = isset($cachemoversettings['recycle_folder']) ? $cachemoversettings['recycle_folder'] : "";
+$cachemoversettings_unraid_note        = isset($cachemoversettings['unraid_note']) ? $cachemoversettings['unraid_note'] : "";
+$cachemoversettings_script_cron        = isset($cachemoversettings['script_cron']) ? $cachemoversettings['script_cron'] : "";
+$cachemoversettings_clean_cron        = isset($cachemoversettings['clean_cron']) ? $cachemoversettings['clean_cron'] : "";
+// Log
+$cachemoversettings_unraid_syslog        = isset($cachemoversettings['unraid_syslog']) ? $cachemoversettings['unraid_syslog'] : "";
+shell_exec("/usr/local/emhttp/plugins/cache-mover/scripts/cache_logs.sh");
+// Cron States
+$cachemoversettings_script_cron_state        = isset($cachemoversettings['script_cron_state']) ? $cachemoversettings['script_cron_state'] : "";
+$cachemoversettings_clean_cron_state        = isset($cachemoversettings['clean_cron_state']) ? $cachemoversettings['clean_cron_state'] : "";
+?>
+
+<script>
+    function send(command) {
+        if(command == "cleaner_start"){
+            document.getElementById("command").value = "/usr/local/emhttp/plugins/cache-mover/scripts/cache_cleaner_cron.sh";
+        } else if( command == "mover_start" ){
+            document.getElementById("command").value = "/usr/local/emhttp/plugins/cache-mover/scripts/cache_mover_cron.sh";
+        }
+        document.getElementById("form").submit();
+    }
+</script>
+
+<form markdown="1" id="form" method="POST" action="/update.php" target="progressFrame">
+<input type="hidden" id="file" name="#file" value="/boot/config/plugins/cache-mover/cachemoversettings" />
+<input type="hidden" id="command" name="#command" value="" />
+
+
+<div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover Setup</span></div>
+
+Monitor disks:
+: <input type="text" name="disks" class="narrow" maxlength="31" value="<?=$cachemoversettings_disks;?>" placeholder="disk1 disk2" >
+    <blockquote class='inline_help'>
+        <p>space separated list of source disks to look for open files, disks in array ...</p>
+    </blockquote>
+
+Media subfolders:
+: <input type="text" name="subfolders" class="narrow" maxlength="31" value="<?=$cachemoversettings_subfolders;?>" placeholder="VCD HDDVDR TVRIPS" >
+    <blockquote class='inline_help'>
+        <p>which subfolders to look for, space seperated, sample "VCD HDDVDR TVRIPS" ...</p>
+    </blockquote>
+
+Media filetypes:
+: <input type="text" name="filetypes" class="narrow" maxlength="31" value="<?=$cachemoversettings_filetypes;?>" placeholder=".mkv .mp4 .ts" >
+    <blockquote class='inline_help'>
+        <p>which filetypes to look for, space seperated, sample ".mkv .mp4 .ts" ...</p>
+    </blockquote>
+
+Target pool:
+: <input type="text" name="pool" class="narrow" maxlength="31" value="<?=$cachemoversettings_pool;?>" placeholder="cache" >
+    <blockquote class='inline_help'>
+        <p>target pool to copy or move on, ONLY 1 target</p>
+    </blockquote>
+
+Waiting time:
+: <input type="text" name="wait_todo" class="narrow" maxlength="31" value="<?=$cachemoversettings_wait_todo;?>" placeholder="120" >
+    <blockquote class='inline_help'>
+        <p>seconds to check if still active, copy / move only if still active ...</p>
+        <p>set long enough to avoid cached dir list movings ... 120 seconds ++</p>
+    </blockquote>
+
+Cache Mover Mode:
+: <input type="text" name="rsync_mode" class="narrow" maxlength="31" value="<?=$cachemoversettings_rsync_mode;?>" placeholder="copy" >
+    <blockquote class='inline_help'>
+        <p>copy (to pool and also keep on array, RECOMMENDED !!!) or move (and del from array)</p>
+    </blockquote>
+
+Cache Mover Switch Mode:
+: <input type="text" name="switch_mode" class="narrow" maxlength="31" value="<?=$cachemoversettings_switch_mode;?>" placeholder="switch" >
+    <blockquote class='inline_help'>
+        <p>switch, recommended, switch live from array to pool</p>
+        <p>close, close open file on array, playback will stall, stop, start to automatically use then pool instead array disk</p>
+        <p>empty, do nothing, manual mode</p>
+    </blockquote>
+
+<div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover Setup - Keepalive Setup</span></div>
+
+Keep Hours regular:
+: <input type="text" name="time_keephours" class="narrow" maxlength="31" value="<?=$cachemoversettings_time_keephours;?>" placeholder="24" >
+    <blockquote class='inline_help'>
+        <p>hours to keep data on pool before removal, or before move back to array</p>
+    </blockquote>
+
+Keep Hours Secondary:
+: <input type="text" name="time_keephours_sub" class="narrow" maxlength="31" value="<?=$cachemoversettings_time_keephours_sub;?>" placeholder="672" >
+    <blockquote class='inline_help'>
+        <p>"Special subfolder" hours to keep data on cache before move back / remove from cache again</p>
+		<p>should be one of the Media Subfolders from gerneral Setup</p>
+		<p>sample, recommended for TV Shows as always full Season is copied / moved</p>
+    </blockquote>
+
+Subfolder Keep Hours Secondary:
+: <input type="text" name="subfolder_keep_sub" class="narrow" maxlength="31" value="<?=$cachemoversettings_subfolder_keep_sub;?>" placeholder="/TVRIPS" >
+    <blockquote class='inline_help'>
+        <p>""Special subfolder" as separate keep hours rule" hours</p>
+    </blockquote>
+
+<div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover Setup - Processing and Mover Tuning</span></div>
+
+Script List:
+: <input type="text" name="move_excl" class="narrow" maxlength="31" value="<?=$cachemoversettings_move_excl;?>" placeholder="yes" >
+    <blockquote class='inline_help'>
+        <p>enable "yes" or disable "no" Script working list</p>
+        <p>mandatory for further processing and mover tuning plugin ... otherwise cleanup manually</p>
+    </blockquote>
+
+Script List filepath:
+: <input type="text" name="move_excl_list" class="narrow" maxlength="31" value="<?=$cachemoversettings_move_excl_list;?>" placeholder="/mnt/user/system/mover/mover_excl.txt" >
+    <blockquote class='inline_help'>
+        <p>temp exclusion list for further processing, to add to mover tuning list</p>
+        <p>will then always be merged with mover tuning ignore list</p>
+		<p>should be on a persistent Share like system</p>
+    </blockquote>
+
+Mover Tuning Ignore List filepath:
+: <input type="text" name="move_tune_list" class="narrow" maxlength="31" value="<?=$cachemoversettings_move_tune_list;?>" placeholder="/mnt/user/system/mover/mover_ignore.txt" >
+    <blockquote class='inline_help'>
+        <p>current mover tuning ignore list, leave emtpy if not used ...</p>
+		<p>will be always updated with cache-mover activities</p>
+		<p>if not used, regular mover will move files away</p>
+    </blockquote>
+
+Expire Target Dir:
+: <input type="text" name="target_keephours" class="narrow" maxlength="31" value="<?=$cachemoversettings_target_keephours;?>" placeholder="user0" >
+    <blockquote class='inline_help'>
+        <p>disk where to move back when move instead copy was used after keep hours are expired</p>
+        <p>also where to look for existing file in terms of copy used</p>
+    </blockquote>
+
+<div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover Setup - Recycle Setup</span></div>
+
+Use Recycle:
+: <input type="text" name="use_recycle" class="narrow" maxlength="31" value="<?=$cachemoversettings_use_recycle;?>" placeholder="no" >
+    <blockquote class='inline_help'>
+        <p>use recycle.bin instead file deletion from pool disk if copy was used (array file exist)</p>
+        <p>obsolete if move was used as file will be moved back to array instead</p>
+        <p>following recycle.bin plugin rules then !!!</p>
+    </blockquote>
+
+Recycle Folder:
+: <input type="text" name="recycle_folder" class="narrow" maxlength="31" value="<?=$cachemoversettings_recycle_folder;?>" placeholder=".Recycle.Bin" >
+    <blockquote class='inline_help'>
+        <p>default folder for recycle Folder on pool</p>
+        <p>if Recycle plugin is used, follow recycle bin plugin rules</p>
+    </blockquote>
+
+
+<div style="text-align: center;">
+    <input type="button" value="Apply" onClick="send('apply')">
+</div>
+
+<div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover Setup - Timers</span></div>
+
+Cache Mover Cron:
+: <input type="text" name="script_cron" class="narrow" maxlength="31" value="<?=$cachemoversettings_script_cron;?>" placeholder="*/10 * * * *" >
+<input type="button" value="Set Cron" onClick="send('mover_start')">
+<input type="button" value="<?php echo $cachemoversettings['script_cron_state']; ?>"/>
+    <blockquote class='inline_help'>
+        <p>cron timer, to do the tasks ... recommended around every 10 Minutes</p>
+    </blockquote>
+
+Cache Cleaner Cron:
+: <input type="text" name="clean_cron" class="narrow" maxlength="31" value="<?=$cachemoversettings_clean_cron;?>" placeholder="5 7 * * *" >
+<input type="button" value="Set Cron" onClick="send('cleaner_start')">
+<input type="button" value="<?php echo $cachemoversettings['clean_cron_state']; ?>"/>
+    <blockquote class='inline_help'>
+        <p>cron timer, when should we check age and either delete pool doublette, move to Recycle, move back to array</p>
+		<p>recommended once a day</p>
+    </blockquote>
+
+
+<div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Log and Notifications Setup</span></div>
+
+syslog:
+: <input type="text" name="unraid_syslog" class="narrow" maxlength="20" value="<?=$cachemoversettings_unraid_syslog;?>" placeholder="yes" >
+    <blockquote class='inline_help'>
+        <p>type <yes> to activate syslog logging</p>
+    </blockquote>
+
+Unraid Notifications:
+: <input type="text" name="unraid_note" class="narrow" maxlength="31" value="<?=$cachemoversettings_unraid_note;?>" placeholder="yes" >
+    <blockquote class='inline_help'>
+        <p>send Unraid notifys on events</p>
+    </blockquote>
+
+<div style="text-align: center;">
+    <input type="button" value="Apply" onClick="send('apply')">
+</div>
+
+<div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover Setup - Rsync Commands</span></div>
+
+rsync move command:
+: <input type="text" name="rsync_move" class="narrow" maxlength="31" value="<?=$cachemoversettings_rsync_move;?>" placeholder="rsync -avzht --mkpath --remove-source-files --progress" >
+    <blockquote class='inline_help'>
+        <p>used rsync command to move from array to pool</p>
+		<p>changes on own risk</p>
+    </blockquote>
+
+rsync copy command:
+: <input type="text" name="rsync_copy" class="narrow" maxlength="31" value="<?=$cachemoversettings_rsync_copy;?>" placeholder="rsync -avzht --mkpath --progress" >
+    <blockquote class='inline_help'>
+        <p>used rsync command to copy from array to pool</p>
+		<p>changes on own risk</p>
+    </blockquote>
+
+</form>

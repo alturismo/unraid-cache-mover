@@ -1,0 +1,23 @@
+Menu="cache-mover:1"
+Title="CACHE MOVER LOG"
+Tag="icon-disk"
+---
+
+<?
+$file = "/usr/local/emhttp/plugins/cache-mover/cache_mover_log.txt";
+$text = @file_get_contents($file) ?: '';
+$text = preg_replace(["/\r\n/","/\r/"],"\n",$text);
+$file2 = "/usr/local/emhttp/plugins/cache-mover/cache_cleaner_log.txt";
+$text2 = @file_get_contents($file2) ?: '';
+$text2 = preg_replace(["/\r\n/","/\r/"],"\n",$text2);
+?>
+
+<div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover Logs</span></div>
+<div style='border: 1px solid red; height:500px; overflow:auto;'>
+<textarea spellcheck="false" cols="120" rows="<?=substr_count($text,"\n")+1?>" maxlength="512" name="text" style="resize:none;font-family:bitstream;width:100%" <?if ($var['fsState']=="Started"):?>disabled<?endif;?>><?=htmlspecialchars($text)?></textarea></div>
+
+<div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Cleaner Logs</span></div>
+<div style='border: 1px solid red; height:500px; overflow:auto;'>
+<textarea spellcheck="false" cols="120" rows="<?=substr_count($text2,"\n")+1?>" maxlength="512" name="text2" style="resize:none;font-family:bitstream;width:100%" <?if ($var['fsState']=="Started"):?>disabled<?endif;?>><?=htmlspecialchars($text2)?></textarea></div>
+
+</form>

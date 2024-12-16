@@ -1,0 +1,125 @@
+#!/bin/bash
+
+################################
+source /boot/config/plugins/cache-mover/cachemoversettings
+
+################################
+listupdater="/usr/local/emhttp/plugins/cache-mover/scripts/cache_mover4"
+
+### Check if another instance of this Program is running
+pidof -o %PPID -x $0 >/dev/null && echo "ERROR: Program $0 already running" && exit 1
+
+################################
+if [ "$unraid_syslog" == "yes" ]; then
+
+log_message() {
+  while IFS= read -r line; do
+    logger "cache-mover: ${line}"
+  done
+}
+exec > >(log_message) 2>&1
+
+fi
+
+################################
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
+### copy / mover lookup and action
+for disk in $disks
+	do
+for subfolder in $subfolders
+	do
+for filetype in $filetypes
+	do
+	openfile=""
+	openpath=""
+	opencheck=""
+	targetdir=""
+	openfile=$(ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/mnt/$disk" | grep -i "/$subfolder" | grep -i "$filetype$" | sed '$!d')
+		if [ ! -z "$openfile" ]; then
+			process_id=$(echo $openfile | awk '{ print $9; }' | cut -f 3 -d "/")
+			file_descr=$(echo $openfile | awk '{ print $9; }' | cut -f 5 -d "/")
+			openpath="$(readlink /proc/$process_id/fd/$file_descr)"
+			directory=$(dirname "$openpath")
+			echo "open dir on $disk: $directory"
+			sleep $wait_todo
+			opencheck=$(ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/mnt/$disk" | grep -i "/$subfolder" | grep -i "$filetype$" | sed '$!d')
+			opencheck="$(readlink /proc/$process_id/fd/$file_descr)"
+			if [ "$openpath" == "$opencheck" ]; then
+				targetdir=$(echo ${directory/$disk/$pool})
+				echo "move / copy $directory/ to $targetdir/"
+				mkdir -p "$targetdir"
+				if [ "$rsync_mode" = "move" ]; then
+					$rsync_move "$directory/" "$targetdir/"
+					## move source files to target dir
+					find "$directory" -type d -empty -delete
+					## delete file on array
+					if [ "$unraid_note" = "yes" ]; then
+					/usr/local/emhttp/webGui/scripts/notify -e "Move Note" -s "$targetdir/" -i "normal" &
+					fi				fi
+				if [ "$rsync_mode" = "copy" ]; then
+					$rsync_copy "$directory/" "$targetdir/"
+					## copy source files to target dir, keep Original
+					if [ "$unraid_note" = "yes" ]; then
+					/usr/local/emhttp/webGui/scripts/notify -e "Copy Note" -s "$targetdir/" -i "normal" &
+					fi
+				fi
+				if [ "$move_excl" = "yes" ]; then
+					echo "$targetdir" >> $move_excl_list
+					awk -i inplace '!seen[$0]++' $move_excl_list
+					## open todo, merge with currrent ignore list
+				fi
+				if [ "$force_fdclose" = "yes" ]; then
+				    echo "$directory/ open file will be closed"
+					## hard closing file descriptor path
+                    fdclose $process_id $file_descr
+				fi
+				if [ "$force_fdswitch" = "yes" ]; then
+				    echo "$openpath"
+					echo "open file will be switched to new path"
+					## hard switching file descriptor path
+					sleep 1
+					dst=$(echo ${openpath/$disk/$pool})
+					echo "$dst"
+					if gdb --version > /dev/null 2>&1; then true
+						else echo "Unable to find gdb, check readme"; exit 1
+					fi
+					(
+					echo "attach $process_id"
+					echo 'call (int)open("'$dst'", 00|0100|02000, 0666)'
+					echo 'call (int)dup2($1,'$file_descr')'
+					echo 'call (int)close($1)'
+					echo 'detach'; echo 'quit'
+					sleep 1
+					) | gdb -q -x -
+				fi
+			else
+				echo "no copy/move for $directory"
+			fi
+		fi
+	done
+	done
+	done
+
+### update mover ignore list ###
+$listupdater
+
+### update access time on active pool disk
+for subfolder in $subfolders
+	do
+for filetype in $filetypes
+	do
+		openfile=$(ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/mnt/$pool" | grep -i "/$subfolder" | grep -i "$filetype$" | sed '$!d')
+		if [ ! -z "$openfile" ]; then
+			process_id=$(echo $openfile | awk '{ print $9; }' | cut -f 3 -d "/")
+			file_descr=$(echo $openfile | awk '{ print $9; }' | cut -f 5 -d "/")
+			openpath="$(readlink /proc/$process_id/fd/$file_descr)"
+			directory=$(dirname "$openpath")
+			echo "update access time: $directory"
+			touch -a "$directory"
+		fi
+	done
+	done
+
+exit;

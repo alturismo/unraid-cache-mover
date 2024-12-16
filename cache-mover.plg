@@ -1,0 +1,131 @@
+<?xml version='1.0' standalone='yes'?>
+<!DOCTYPE PLUGIN [
+<!ENTITY name      "cache-mover">
+<!ENTITY author    "alturismo">
+<!ENTITY version   "2024.12.17">
+<!ENTITY launch    "Settings/cache-mover">
+<!ENTITY gitURL    "https://raw.githubusercontent.com/alturismo/unraid-cache-mover/master">
+<!ENTITY pluginURL "&gitURL;/&name;.plg">
+<!ENTITY plgPATH   "/boot/config/plugins/&name;">
+<!ENTITY plgNAME   "&name;-&version;-x86_64">
+<!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
+<!ENTITY packages  "/boot/config/plugins/&name;/packages">
+]>
+<PLUGIN name="&name;" 
+        author="&author;" 
+        version="&version;" 
+        launch="&launch;" 
+        pluginURL="&pluginURL;" 
+        min="6.11.0"
+        support="https://forums.unraid.net/topic/181843-support-alturismo-repos/">
+ 
+<CHANGES>
+ ###2024.12.17
+  - initial beta release
+
+</CHANGES>
+
+<FILE Name="&emhttp;/README.md">
+ <INLINE>
+  **Cache Mover**
+
+  Plugin to move playing Media Files from array disks to a pool device in user Share while watching and keep them there by rules, incl. live switching in background.
+ </INLINE>
+</FILE>
+
+<FILE Name="&plgPATH;/&plgNAME;.txz" Run="upgradepkg --install-new">
+<URL>&gitURL;/packages/&name;.txz</URL>
+</FILE>
+
+<FILE Name="&plgPATH;/fdclose.txz" Run="upgradepkg --install-new">
+<URL>&gitURL;/packages/fdclose.txz</URL>
+</FILE>
+
+<FILE Name="&plgPATH;/python3-3.11.10-x86_64-1.txz" Run="upgradepkg --install-new">
+<URL>&gitURL;/packages/python3-3.11.10-x86_64-1.txz</URL>
+</FILE>
+
+<FILE Name="&plgPATH;/gdb-15.2-x86_64-1.txz" Run="upgradepkg --install-new">
+<URL>&gitURL;/packages/gdb-15.2-x86_64-1.txz</URL>
+</FILE>
+
+<FILE Run="/bin/bash">
+ <INLINE>
+
+  echo "Checking executable flags..."
+
+  if [ -f /usr/local/emhttp/plugins/cache-mover/scripts/none ]; then
+    if [ ! -x /usr/local/emhttp/plugins/cache-mover/scripts/none ]; then
+        chmod +x /usr/local/emhttp/plugins/cache-mover/scripts/*
+        echo "scripts are executable."
+    else
+        echo "scripts where already executable."
+    fi
+  else
+    echo "script doesn't exist."
+  fi
+
+ </INLINE>
+</FILE>
+
+<FILE Run="/bin/bash">
+ <INLINE>
+
+  echo default configuration if not existend
+
+  def_settingsfile="/usr/local/emhttp/plugins/cache-mover/default_cachemoversettings"
+  settingsfile="/boot/config/plugins/cache-mover/cachemoversettings"
+
+  if test -f "$settingsfile"; then
+    echo "$FILE already there"
+  else
+    cp $def_settingsfile $settingsfile
+	echo "copy default $FILE"
+  fi
+
+  echo "Starting Actions and Cache Mover if crons where set ..."
+
+  touch /boot/config/plugins/cache-mover/cachemoversettings
+  sed -i 's/^script_cron_state=.*//' /boot/config/plugins/cache-mover/cachemoversettings
+  sed -i 's/^clean_cron_state=.*//' /boot/config/plugins/cache-mover/cachemoversettings
+  sed -i '/^$/d' /boot/config/plugins/cache-mover/cachemoversettings
+
+  echo 'script_cron_state=""' >> /boot/config/plugins/cache-mover/cachemoversettings
+  echo 'clean_cron_state=""' >> /boot/config/plugins/cache-mover/cachemoversettings
+
+  /usr/local/emhttp/plugins/cache-mover/scripts/cache_mover_cron.sh
+  /usr/local/emhttp/plugins/cache-mover/scripts/cache_cleaner_cron.sh
+
+  if [ ! -z "$(crontab -l | grep -i Cache_Mover)" ]; then
+    echo "cronjob for Cache Mover started"
+	sed -i 's/^script_cron_state=.*/script_cron_state="started"/' /boot/config/plugins/cache-mover/cachemoversettings
+  else
+    echo "cron for Cache Mover not started"
+	sed -i 's/^script_cron_state=.*/script_cron_state="stopped"/' /boot/config/plugins/cache-mover/cachemoversettings
+  fi
+
+  if [ ! -z "$(crontab -l | grep -i Cache_Cleaner)" ]; then
+    echo "cronjob for Cache Cleaner started"
+	sed -i 's/^clean_cron_state=.*/clean_cron_state="started"/' /boot/config/plugins/cache-mover/cachemoversettings
+  else
+    echo "cron for Cache Cleaner not started"
+	sed -i 's/^clean_cron_state=.*/clean_cron_state="stopped"/' /boot/config/plugins/cache-mover/cachemoversettings
+  fi
+
+ </INLINE>
+</FILE>
+
+<FILE Run="/bin/bash" Method="remove">
+ <INLINE>
+  echo "Removing &name;..."
+  removepkg &plgPATH;/*.txz
+  rm -rf &plgPATH;
+  rm -rf &emhttp;
+  sed -i 's/^script_cron_state=.*//' /boot/config/plugins/cache-mover/cachemoversettings
+  sed -i 's/^clean_cron_state=.*//' /boot/config/plugins/cache-mover/cachemoversettings
+  sed -i '/^$/d' /boot/config/plugins/cache-mover/cachemoversettings
+  echo "&name; has been removed"
+ </INLINE>
+</FILE>
+
+</PLUGIN>
