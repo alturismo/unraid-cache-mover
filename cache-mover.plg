@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "cache-mover">
 <!ENTITY author    "alturismo">
-<!ENTITY version   "2024.12.17">
+<!ENTITY version   "2024.12.17a">
 <!ENTITY launch    "Settings/cache-mover">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/alturismo/unraid-cache-mover/master">
 <!ENTITY pluginURL "&gitURL;/&name;.plg">
@@ -16,11 +16,11 @@
         version="&version;" 
         launch="&launch;" 
         pluginURL="&pluginURL;" 
-        min="6.11.0"
+        min="6.12.13"
         support="https://forums.unraid.net/topic/181843-support-alturismo-repos/">
  
 <CHANGES>
- ###2024.12.17
+ ###2024.12.17a
   - initial beta release
 
 </CHANGES>
@@ -41,8 +41,8 @@
 <URL>&gitURL;/packages/fdclose.txz</URL>
 </FILE>
 
-<FILE Name="&plgPATH;/python3-3.11.10-x86_64-1.txz" Run="upgradepkg --install-new">
-<URL>&gitURL;/packages/python3-3.11.10-x86_64-1.txz</URL>
+<FILE Name="&plgPATH;/python3-3.12.8-x86_64-1.txz" Run="upgradepkg --install-new">
+<URL>&gitURL;/packages/python3-3.12.8-x86_64-1.txz</URL>
 </FILE>
 
 <FILE Name="&plgPATH;/gdb-15.2-x86_64-1.txz" Run="upgradepkg --install-new">
@@ -118,7 +118,8 @@
 <FILE Run="/bin/bash" Method="remove">
  <INLINE>
   echo "Removing &name;..."
-  removepkg &plgPATH;/*.txz
+  echo "can take a while as python3 is ..."
+  removepkg &plgPATH;/*.txz  1> /dev/null
   rm -rf &plgPATH;
   rm -rf &emhttp;
   sed -i 's/^script_cron_state=.*//' /boot/config/plugins/cache-mover/cachemoversettings
