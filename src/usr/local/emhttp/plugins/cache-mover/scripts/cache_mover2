@@ -68,12 +68,11 @@ for filetype in $filetypes
 				if [ "$move_excl" = "yes" ]; then
 					echo "$targetdir" >> $move_excl_list
 					awk -i inplace '!seen[$0]++' $move_excl_list
-					## open todo, merge with currrent ignore list
 				fi
 				if [ "$switch_mode" = "close" ]; then
-				    echo "$directory/ open file will be closed"
+					echo "$directory/ open file will be closed"
 					## hard closing file descriptor path
-                    fdclose $process_id $file_descr
+					fdclose $process_id $file_descr
 				fi
 				if [ "$switch_mode" = "switch" ]; then
 				    echo "$openpath"
@@ -82,8 +81,11 @@ for filetype in $filetypes
 					sleep 1
 					dst=$(echo ${openpath/$disk/$pool})
 					echo "$dst"
-					if gdb --version > /dev/null 2>&1; then true
-						else echo "Unable to find gdb, check readme"; exit 1
+					if gdb --version > /dev/null 2>&1; then
+						echo "ready to switch live"
+					else
+						echo "Unable to find gdb, check readme"
+						exit 1
 					fi
 					(
 					echo "attach $process_id"
@@ -91,7 +93,6 @@ for filetype in $filetypes
 					echo 'call (int)dup2($1,'$file_descr')'
 					echo 'call (int)close($1)'
 					echo 'detach'; echo 'quit'
-					sleep 1
 					) | gdb -q -x -
 				fi
 			else

@@ -22,6 +22,10 @@ fi
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
+### update permissions
+chmod 777 $move_excl_list
+chmod 777 $move_tune_list
+
 ### update mover ignore list ###
 if [ "$move_excl" = "yes" ]; then
 mover_source_files="$move_excl_list $move_tune_list"
