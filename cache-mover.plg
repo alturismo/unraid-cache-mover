@@ -22,7 +22,7 @@
 <CHANGES>
  ###2024.12.22
   - fixed 6.12.13+ compatibility
-  - updated gdb && python on v7
+  - updated gdb and python on v7
 
  ###2024.12.20
   - fixed move files perm in edge case
