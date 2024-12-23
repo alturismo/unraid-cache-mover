@@ -56,16 +56,8 @@
 <URL>&gitURL;/packages/fdclose.txz</URL>
 </FILE>
 
-<FILE Name="&plgPATH;/python3-3.12.8-x86_64-1.txz" Run="upgradepkg --install-new" Min="6.13.0">
-<URL>&gitURL;/packages/python3-3.12.8-x86_64-1.txz</URL>
-</FILE>
-
 <FILE Name="&plgPATH;/gdb-15.2-x86_64-3.txz" Run="upgradepkg --install-new" Min="6.13.0">
 <URL>&gitURL;/packages/gdb-15.2-x86_64-3.txz</URL>
-</FILE>
-
-<FILE Name="&plgPATH;/python3-3.9.10-x86_64-1.txz" Run="upgradepkg --install-new" Max="6.12.99">
-<URL>&gitURL;/packages/python3-3.9.10-x86_64-1.txz</URL>
 </FILE>
 
 <FILE Name="&plgPATH;/gdb-11.2-x86_64-1.txz" Run="upgradepkg --install-new" Max="6.12.99">
@@ -144,11 +136,13 @@
   fi
 
   if [ $current_packages -eq 0 ]; then
-    echo "| installing pre $unraid_version_break dependencies"
-    installpkg /boot/config/plugins/cache-mover/libffi-3.3-x86_64-3.txz
+    echo "| installing extra pre $unraid_version_break packages"
+    installpkg /boot/config/plugins/cache-mover/python3-3.9.10-x86_64-1.txz
+	installpkg /boot/config/plugins/cache-mover/libffi-3.3-x86_64-3.txz
     installpkg /boot/config/plugins/cache-mover/libunistring-0.9.10-x86_64-3.txz
   else
-    echo "| all good, nothing todo"
+    echo "| installing extra $unraid_version_break ++ packages"
+	installpkg /boot/config/plugins/cache-mover/python3-3.12.8-x86_64-1.txz
   fi
   echo "+=============================================================================="
 
