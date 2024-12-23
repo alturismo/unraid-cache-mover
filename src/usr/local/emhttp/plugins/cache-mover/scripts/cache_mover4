@@ -23,6 +23,8 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
 ### update permissions
+touch $move_excl_list
+touch $move_tune_list
 chmod 777 $move_excl_list
 chmod 777 $move_tune_list
 

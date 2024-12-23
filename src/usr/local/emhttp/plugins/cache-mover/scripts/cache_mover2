@@ -45,6 +45,12 @@ for filetype in $filetypes
 			echo "open dir on $disk: $directory"
 			sleep $wait_todo
 			opencheck=$(ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/mnt/$disk" | grep -i "/$subfolder" | grep -i "$filetype$" | sed '$!d')
+			### break if file is in write mode
+			write_check=$(echo $openfile | cut -f 1 -d " ")
+			if [[ "$write_check" =~ ^lrw.* ]]; then
+				echo "$openpath is in write mode, we quit here"
+				exit;
+			fi
 			opencheck="$(readlink /proc/$process_id/fd/$file_descr)"
 			if [ "$openpath" == "$opencheck" ]; then
 				targetdir=$(echo ${directory/$disk/$pool})
