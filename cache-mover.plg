@@ -117,7 +117,46 @@
 <FILE Run="/bin/bash">
  <INLINE>
 
-  echo default configuration if not existend
+  echo "Checking Unraid Version ..."
+
+  unraid_version_break="7.0"
+  unraid_version=$(cat /etc/unraid-version | cut -d '"' -f 2 | cut -d '.' -f 1,2)
+
+  unraid_version_main=$(echo $unraid_version | cut -d '.' -f 1)
+  unraid_version_sub=$(echo $unraid_version | cut -d '.' -f 2)
+
+  unraid_version_break_main=$(echo $unraid_version_break | cut -d '.' -f 1)
+  unraid_version_break_sub=$(echo $unraid_version_break | cut -d '.' -f 2)
+
+  if (( $unraid_version_main > $unraid_version_break_main )); then
+    current_packages="1"
+  else
+    if (( $unraid_version_main == $unraid_version_break_main )); then
+      if (( $unraid_version_sub < $unraid_version_break_sub )); then
+        current_packages="0"
+      else
+        current_packages="1"
+      fi
+    else
+      current_packages="0"
+    fi
+  fi
+
+  if (( $current_packages == 0 )); then
+    echo "installing pre $unraid_version_break dependencies"
+    installpkg /boot/config/plugins/cache-mover/libffi-3.3-x86_64-3.txz
+    installpkg /usr/local/emhttp/plugins/cache-mover/libunistring-0.9.10-x86_64-3.txz
+  else
+    echo "all good, nothing todo"
+  fi
+
+ </INLINE>
+</FILE>
+
+<FILE Run="/bin/bash">
+ <INLINE>
+
+  echo "default configuration if not existend"
 
   def_settingsfile="/usr/local/emhttp/plugins/cache-mover/default_cachemoversettings"
   settingsfile="/boot/config/plugins/cache-mover/cachemoversettings"
