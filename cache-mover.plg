@@ -76,14 +76,6 @@
 <URL>&gitURL;/packages/elfutils-0.186-x86_64-1.txz</URL>
 </FILE>
 
-<FILE Name="&plgPATH;/libffi-3.3-x86_64-3.txz" Run="upgradepkg --install-new" Max="6.12.99">
-<URL>&gitURL;/packages/libffi-3.3-x86_64-3.txz</URL>
-</FILE>
-
-<FILE Name="&plgPATH;/libunistring-0.9.10-x86_64-3.txz" Run="upgradepkg --install-new" Max="6.12.99">
-<URL>&gitURL;/packages/libunistring-0.9.10-x86_64-3.txz</URL>
-</FILE>
-
 <FILE Run="/bin/bash">
  <INLINE>
 
