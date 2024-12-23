@@ -117,7 +117,8 @@
 <FILE Run="/bin/bash">
  <INLINE>
 
-  echo "Checking Unraid Version ..."
+  echo "+=============================================================================="
+  echo "| Checking Unraid Version ..."
 
   unraid_version_break="7.0"
   unraid_version=$(cat /etc/unraid-version | cut -d '"' -f 2 | cut -d '.' -f 1,2)
@@ -143,12 +144,14 @@
   fi
 
   if [ $current_packages -eq 0 ]; then
-    echo "installing pre $unraid_version_break dependencies"
+    echo "| installing pre $unraid_version_break dependencies"
     installpkg /boot/config/plugins/cache-mover/libffi-3.3-x86_64-3.txz
     installpkg /boot/config/plugins/cache-mover/libunistring-0.9.10-x86_64-3.txz
   else
-    echo "all good, nothing todo"
+    echo "| all good, nothing todo"
   fi
+  echo "+=============================================================================="
+
 
  </INLINE>
 </FILE>
@@ -156,19 +159,22 @@
 <FILE Run="/bin/bash">
  <INLINE>
 
-  echo "default configuration if not existend"
+  echo "+=============================================================================="
+  echo "| default configuration if not existend"
 
   def_settingsfile="/usr/local/emhttp/plugins/cache-mover/default_cachemoversettings"
   settingsfile="/boot/config/plugins/cache-mover/cachemoversettings"
 
   if test -f "$settingsfile"; then
-    echo "$FILE already there"
+    echo "| $FILE already there"
   else
     cp $def_settingsfile $settingsfile
-	echo "copy default $FILE"
+	echo "| copy default $FILE"
   fi
+  echo "+=============================================================================="
 
-  echo "Starting Actions and Cache Mover if crons where set ..."
+  echo "+=============================================================================="
+  echo "| Starting Actions and Cache Mover if crons where set ..."
 
   touch /boot/config/plugins/cache-mover/cachemoversettings
   sed -i 's/^script_cron_state=.*//' /boot/config/plugins/cache-mover/cachemoversettings
@@ -182,20 +188,22 @@
   /usr/local/emhttp/plugins/cache-mover/scripts/cache_cleaner_cron.sh
 
   if [ ! -z "$(crontab -l | grep -i Cache_Mover)" ]; then
-    echo "cronjob for Cache Mover started"
+    echo "| cronjob for Cache Mover started"
 	sed -i 's/^script_cron_state=.*/script_cron_state="started"/' /boot/config/plugins/cache-mover/cachemoversettings
   else
-    echo "cron for Cache Mover not started"
+    echo "| cron for Cache Mover not started"
 	sed -i 's/^script_cron_state=.*/script_cron_state="stopped"/' /boot/config/plugins/cache-mover/cachemoversettings
   fi
 
   if [ ! -z "$(crontab -l | grep -i Cache_Cleaner)" ]; then
-    echo "cronjob for Cache Cleaner started"
+    echo "| cronjob for Cache Cleaner started"
 	sed -i 's/^clean_cron_state=.*/clean_cron_state="started"/' /boot/config/plugins/cache-mover/cachemoversettings
   else
-    echo "cron for Cache Cleaner not started"
+    echo "| cron for Cache Cleaner not started"
 	sed -i 's/^clean_cron_state=.*/clean_cron_state="stopped"/' /boot/config/plugins/cache-mover/cachemoversettings
   fi
+  echo "+=============================================================================="
+
 
  </INLINE>
 </FILE>
