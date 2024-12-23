@@ -132,12 +132,16 @@
 
   if [ $current_packages -eq 0 ]; then
     echo "| installing extra pre $unraid_version_break packages"
+    wget https://raw.githubusercontent.com/alturismo/unraid-cache-mover/master/packages/python3-3.9.10-x86_64-1.txz -P /boot/config/plugins/cache-mover/
+    wget https://raw.githubusercontent.com/alturismo/unraid-cache-mover/master/packages/libffi-3.3-x86_64-3.txz -P /boot/config/plugins/cache-mover/
+    wget https://raw.githubusercontent.com/alturismo/unraid-cache-mover/master/packages/libunistring-0.9.10-x86_64-3.txz -P /boot/config/plugins/cache-mover/
     installpkg /boot/config/plugins/cache-mover/python3-3.9.10-x86_64-1.txz
-	installpkg /boot/config/plugins/cache-mover/libffi-3.3-x86_64-3.txz
+    installpkg /boot/config/plugins/cache-mover/libffi-3.3-x86_64-3.txz
     installpkg /boot/config/plugins/cache-mover/libunistring-0.9.10-x86_64-3.txz
   else
     echo "| installing extra $unraid_version_break ++ packages"
-	installpkg /boot/config/plugins/cache-mover/python3-3.12.8-x86_64-1.txz
+    wget https://raw.githubusercontent.com/alturismo/unraid-cache-mover/master/packages/python3-3.12.8-x86_64-1.txz -P /boot/config/plugins/cache-mover/
+    installpkg /boot/config/plugins/cache-mover/python3-3.12.8-x86_64-1.txz
   fi
   echo "+=============================================================================="
 
