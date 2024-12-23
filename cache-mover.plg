@@ -145,7 +145,7 @@
   if [ $current_packages -eq 0 ]; then
     echo "installing pre $unraid_version_break dependencies"
     installpkg /boot/config/plugins/cache-mover/libffi-3.3-x86_64-3.txz
-    installpkg /usr/local/emhttp/plugins/cache-mover/libunistring-0.9.10-x86_64-3.txz
+    installpkg /boot/config/plugins/cache-mover/libunistring-0.9.10-x86_64-3.txz
   else
     echo "all good, nothing todo"
   fi
