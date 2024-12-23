@@ -161,7 +161,7 @@
     installpkg /boot/config/plugins/cache-mover/$libuni_package
   else
 
-    python_package="python3-3.9.10-x86_64-1.txz"
+    python_package="python3-3.12.8-x86_64-1.txz"
 
     echo "| installing extra $unraid_version_break ++ packages"
     if [ -f "/boot/config/plugins/cache-mover/$python_package" ]; then
