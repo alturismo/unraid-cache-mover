@@ -154,7 +154,7 @@
       echo "| $libuni_package already here and ready to install"
     else 
       echo "| File does not exist, downloading now ..."
-      curl -o /boot/config/plugins/cache-mover/$libuni_package https://raw.githubusercontent.com/alturismo/unraid-cache-mover/master/packages/libuni_package
+      curl -o /boot/config/plugins/cache-mover/$libuni_package https://raw.githubusercontent.com/alturismo/unraid-cache-mover/master/packages/$libuni_package
     fi
     installpkg /boot/config/plugins/cache-mover/$python_package
     installpkg /boot/config/plugins/cache-mover/$libffi_package
