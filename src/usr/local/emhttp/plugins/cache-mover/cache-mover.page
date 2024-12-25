@@ -15,6 +15,7 @@ $cachemoversettings_wait_todo        = isset($cachemoversettings['wait_todo']) ?
 $cachemoversettings_move_excl        = isset($cachemoversettings['move_excl']) ? $cachemoversettings['move_excl'] : "";
 $cachemoversettings_move_excl_list        = isset($cachemoversettings['move_excl_list']) ? $cachemoversettings['move_excl_list'] : "";
 $cachemoversettings_move_tune_list        = isset($cachemoversettings['move_tune_list']) ? $cachemoversettings['move_tune_list'] : "";
+$cachemoversettings_exclusions        = isset($cachemoversettings['exclusions']) ? $cachemoversettings['exclusions'] : "";
 $cachemoversettings_rsync_mode        = isset($cachemoversettings['rsync_mode']) ? $cachemoversettings['rsync_mode'] : "";
 $cachemoversettings_rsync_move        = isset($cachemoversettings['rsync_move']) ? $cachemoversettings['rsync_move'] : "";
 $cachemoversettings_rsync_copy        = isset($cachemoversettings['rsync_copy']) ? $cachemoversettings['rsync_copy'] : "";
@@ -97,6 +98,14 @@ Cache Mover Switch Mode:
         <p>switch, recommended, switch live from array to pool</p>
         <p>close, close open file on array, playback will stall, stop, start to automatically use then pool instead array disk</p>
         <p>empty, do nothing, manual mode</p>
+    </blockquote>
+
+Cache Mover Exclusions:
+: <input type="text" name="exclusions" class="narrow" maxlength="99" value="<?=$cachemoversettings_exclusions;?>" placeholder="/path1 /path2" >
+    <blockquote class='inline_help'>
+        <p>excluded subfolders to look for, space seperated, sample "/path1 /path2" ...</p>
+        <p>plugin will stop execution if ... so should be unique names</p>
+        <p>leave empty if not needed</p>
     </blockquote>
 
 <div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover Setup - Keepalive Setup</span></div>

@@ -36,18 +36,34 @@ for filetype in $filetypes
 	openpath=""
 	opencheck=""
 	targetdir=""
-	openfile=$(ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/mnt/$disk" | grep -i "/$subfolder" | grep -i "$filetype$" | sed '$!d')
+	openfile=$(ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/mnt/$disk" | grep -i "/$subfolder" | grep -i "$filetype" | sed '$!d')
 		if [ ! -z "$openfile" ]; then
 			process_id=$(echo $openfile | awk '{ print $9; }' | cut -f 3 -d "/")
 			file_descr=$(echo $openfile | awk '{ print $9; }' | cut -f 5 -d "/")
 			openpath="$(readlink /proc/$process_id/fd/$file_descr)"
+			### break if there is a exclusion match
+			if [ ! -z "$exclusions" ]; then
+			for excluded in $exclusions
+				do
+				if [[ "$openpath" == *"$excluded"* ]]; then
+					echo "$excluded is excluded, we quit here";
+					exit;
+				fi
+				done
+			fi
+			### break if file is in write mode
+			write_check=$(echo $openfile | cut -f 1 -d " ")
+			if [[ "$write_check" =~ ^lrw.* ]] || [[ "$write_check" =~ ^l-w.* ]]; then
+				echo "$openpath is in write mode, we quit here"
+				exit;
+			fi
 			directory=$(dirname "$openpath")
 			echo "open dir on $disk: $directory"
 			sleep $wait_todo
-			opencheck=$(ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/mnt/$disk" | grep -i "/$subfolder" | grep -i "$filetype$" | sed '$!d')
+			opencheck=$(ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/mnt/$disk" | grep -i "/$subfolder" | grep -i "$filetype" | sed '$!d')
 			### break if file is in write mode
-			write_check=$(echo $openfile | cut -f 1 -d " ")
-			if [[ "$write_check" =~ ^lrw.* ]]; then
+			write_check=$(echo $opencheck | cut -f 1 -d " ")
+			if [[ "$write_check" =~ ^lrw.* ]] || [[ "$write_check" =~ ^l-w.* ]]; then
 				echo "$openpath is in write mode, we quit here"
 				exit;
 			fi
