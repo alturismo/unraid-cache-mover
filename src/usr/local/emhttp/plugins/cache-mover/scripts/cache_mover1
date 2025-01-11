@@ -99,6 +99,10 @@ fi
 
 ### compare lookup go further if ok
 if cmp --silent -- "$check_openfiles" "$tmp_openfiles"; then
+	### rewrite path in terms needed
+	if [ -n "$rewrite_source" ] && [ -n "$rewrite_host" ]; then
+		sed -i "s|$rewrite_source|$rewrite_host|g" $tmp_openfiles
+	fi
 	### lookup openfile and proceed
 	cat $tmp_openfiles | while read tmp_openfile
 		do

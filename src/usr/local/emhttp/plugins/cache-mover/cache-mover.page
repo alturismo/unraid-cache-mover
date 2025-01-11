@@ -46,6 +46,8 @@ $cachemoversettings_mediaserver_host        = isset($cachemoversettings['mediase
 $cachemoversettings_mediaserver_port        = isset($cachemoversettings['mediaserver_port']) ? $cachemoversettings['mediaserver_port'] : "";
 $cachemoversettings_mediaserver_key        = isset($cachemoversettings['mediaserver_key']) ? $cachemoversettings['mediaserver_key'] : "";
 $cachemoversettings_mediaserver_only        = isset($cachemoversettings['mediaserver_only']) ? $cachemoversettings['mediaserver_only'] : "";
+$cachemoversettings_rewrite_source       = isset($cachemoversettings['rewrite_source']) ? $cachemoversettings['rewrite_source'] : "";
+$cachemoversettings_rewrite_host        = isset($cachemoversettings['rewrite_host']) ? $cachemoversettings['rewrite_host'] : "";
 ?>
 
 <script>
@@ -207,6 +209,22 @@ Media Server Mode:
         <p>only (Media Server only mode) multi (Media Server and regular mode) empty (regular mode only)</p>
     </blockquote>
 
+Media Server mountpoint:
+: <input type="text" name="rewrite_source" class="narrow" maxlength="99" value="<?=$cachemoversettings_rewrite_source;?>" placeholder="/data" >
+    <blockquote class='inline_help'>
+        <p>in case there is no 1:1 condition (mnt <> mnt) Mediaserver to host, here the Docker Path like /data</p>
+        <p>please check the mountpoint from your docker, compare how the host path would look like</p>
+		<p>also keep leading / trailing slashes simultan to host value</p>
+    </blockquote>
+
+Media Server host path:
+: <input type="text" name="rewrite_host" class="narrow" maxlength="99" value="<?=$cachemoversettings_rewrite_host;?>" placeholder="/mnt/user/Media" >
+    <blockquote class='inline_help'>
+        <p>in case there is no 1:1 condition (mnt <> mnt) Mediaserver to host, here the Host Path, recommended /mnt/user</p>
+        <p>please check the mountpoint from your docker, compare how the host path would look like</p>
+		<p>also keep leading / trailing slashes simultan to mountpoint value</p>
+    </blockquote>
+
 <div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover Setup - Recycle Setup</span></div>
 
 Use Recycle:
@@ -223,7 +241,6 @@ Recycle Folder:
         <p>default folder for recycle Folder on pool</p>
         <p>if Recycle plugin is used, follow recycle bin plugin rules</p>
     </blockquote>
-
 
 <div style="text-align: center;">
     <input type="button" value="Apply" onClick="send('apply')">
@@ -247,7 +264,6 @@ Cache Cleaner Cron:
         <p>cron timer, when should we check age and either delete pool doublette, move to Recycle, move back to array</p>
 		<p>recommended once a day</p>
     </blockquote>
-
 
 <div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Log and Notifications Setup</span></div>
 
