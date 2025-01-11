@@ -21,7 +21,7 @@
  
 <CHANGES>
  ###2025.01.11
-  - added rewrite option in terms docker mountpoints are not 1:1 (mnt <> mnt)
+  - added rewrite option in terms docker mountpoints are not 1:1 (mnt - mnt)
 
  ###2025.01.11
   - included a MediaServer Option
