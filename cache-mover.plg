@@ -241,7 +241,7 @@
 
 <FILE Run="/bin/bash">
 <INLINE>
-rm -f $(ls &plugin;/&name;*.txz 2>/dev/null|grep -v '&version;')
+rm -f $(ls &plgPATH;/&name;*.txz 2>/dev/null|grep -v '&version;')
 </INLINE>
 </FILE>
 
