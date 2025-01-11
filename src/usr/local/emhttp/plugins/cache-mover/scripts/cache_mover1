@@ -1,0 +1,227 @@
+#!/bin/bash
+
+################################
+source /boot/config/plugins/cache-mover/cachemoversettings
+
+################################
+listupdater="/usr/local/emhttp/plugins/cache-mover/scripts/cache_mover4"
+
+### override /mnt/diskN loops
+disk="user"
+disk_rsync="user0"
+disk_open="/disk"
+
+### Check if another instance of this Program is running
+sleep 1
+pidof -o %PPID -x $0 >/dev/null && echo "ERROR: Program $0 already running" && exit 1
+
+################################
+if [ "$unraid_syslog" == "yes" ]; then
+
+log_message() {
+  while IFS= read -r line; do
+    logger "cache-mover: ${line}"
+  done
+}
+exec > >(log_message) 2>&1
+
+fi
+
+################################
+tmp_openfiles="/usr/local/emhttp/plugins/cache-mover/tmp_openfiles.txt"
+check_openfiles="/usr/local/emhttp/plugins/cache-mover/check_openfiles.txt"
+cache_mover_breaker=""
+
+### rm openfiles
+rm $tmp_openfiles 2> /dev/null
+rm $check_openfiles 2> /dev/null
+
+################################
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
+### lookup config
+if [ "$mediaserver_type" == "" ] || [ "$mediaserver_host" == "" ] || [ "$mediaserver_port" == "" ] || [ "$mediaserver_key" == "" ]; then
+	echo "please fill all fields, type, host, port, key, aborting here"
+	exit;
+fi
+
+### emby / jelly openfile
+if [ "$mediaserver_type" == "jelly" ] || [ "$mediaserver_type" == "emby" ]; then
+	#echo "$mediaserver_type mode"
+	wget -q -O - "http://$mediaserver_host:$mediaserver_port/emby/Sessions?api_key=$mediaserver_key" | \
+	jq '.[] | {NowPlayingItem: .NowPlayingItem.Path} | select(.NowPlayingItem!=null)' | \
+	sed 's|{||g;s|}||g;s|"NowPlayingItem":||g;s|"||g;s|^[ \t]*||;/^[[:space:]]*$/d' \
+	> $tmp_openfiles
+fi
+
+### plex openfile
+if [ "$mediaserver_type" == "plex" ]; then
+	#echo "$mediaserver_type mode"
+	curl -s -H "Accept: application/json" http://$mediaserver_host:$mediaserver_port/status/sessions?X-Plex-Token=$mediaserver_key | \
+	jq '.MediaContainer.Metadata[]?.key' | \
+	xargs -I{} sh -c 'curl -s -H "Accept: application/json" '$mediaserver_host':'$mediaserver_port'{}?X-Plex-Token=$mediaserver_key | \
+	jq .MediaContainer.Metadata[].Media[].Part[].file' | sed 's|{||g;s|}||g;s|"NowPlayingItem":||g;s|"||g;s|^[ \t]*||;/^[[:space:]]*$/d' \
+	> $tmp_openfiles
+fi
+
+### lookup openfile, abort if empty and rm temp openfiles
+if [ ! -s $tmp_openfiles ]; then
+	#echo "nothing played, aborting here"
+	rm $tmp_openfiles
+	exit;
+fi
+
+### wait and look again (1 loop)
+if [ -s $tmp_openfiles ]; then
+	### create check openfile
+	mv $tmp_openfiles $check_openfiles
+	### wait and look if file is still open
+	sleep $wait_todo
+	### emby / jelly openfile
+	if [ "$mediaserver_type" == "jelly" ] || [ "$mediaserver_type" == "emby" ]; then
+		#echo "$mediaserver_type mode"
+		wget -q -O - "http://$mediaserver_host:$mediaserver_port/emby/Sessions?api_key=$mediaserver_key" | \
+		jq '.[] | {NowPlayingItem: .NowPlayingItem.Path} | select(.NowPlayingItem!=null)' | \
+		sed 's|{||g;s|}||g;s|"NowPlayingItem":||g;s|"||g;s|^[ \t]*||;/^[[:space:]]*$/d' \
+		> $tmp_openfiles
+	fi
+	### plex openfile
+	if [ "$mediaserver_type" == "plex" ]; then
+		#echo "$mediaserver_type mode"
+		curl -s -H "Accept: application/json" http://$mediaserver_host:$mediaserver_port/status/sessions?X-Plex-Token=$mediaserver_key | \
+		jq '.MediaContainer.Metadata[]?.key' | \
+		xargs -I{} sh -c 'curl -s -H "Accept: application/json" '$mediaserver_host':'$mediaserver_port'{}?X-Plex-Token=$mediaserver_key | \
+		jq .MediaContainer.Metadata[].Media[].Part[].file' | sed 's|{||g;s|}||g;s|"NowPlayingItem":||g;s|"||g;s|^[ \t]*||;/^[[:space:]]*$/d' \
+		> $tmp_openfiles
+	fi
+fi
+
+### compare lookup go further if ok
+if cmp --silent -- "$check_openfiles" "$tmp_openfiles"; then
+	### lookup openfile and proceed
+	cat $tmp_openfiles | while read tmp_openfile
+		do
+		openfile="/$(echo "${tmp_openfile#*/}")"
+		directory=$(dirname "$tmp_openfile")
+		directory_rsync=$(echo ${directory/$disk/$disk_rsync})
+		filename=$(basename "$tmp_openfile")
+		targetfile=$(echo ${openfile/$disk/$pool})
+		targetdir=$(echo ${directory/$disk/$pool})
+		### break if there is a exclusion match
+		if [ ! -z "$exclusions" ]; then
+			for excluded in $exclusions
+				do
+				if [[ "$directory" == *"$excluded"* ]]; then
+					echo "$excluded is excluded, we quit here";
+					exit;
+				fi
+				done
+		fi
+		### set breaker if there is no subfolder match
+		if [ ! -z "$subfolders" ]; then
+			for subfolder in $subfolders
+				do
+				if [[ "$directory" == *"/$subfolder/"* ]]; then
+					cache_mover_breaker="1"
+				fi
+				done
+		fi
+		### break if
+		if [[ "$cache_mover_breaker" == "" ]]; then
+			echo "Subfolder doesnt match, we quit here";
+			exit;
+		fi
+		cache_mover_breaker=""
+		### set breaker if there is no filetype match
+		if [ ! -z "$filetypes" ]; then
+			for filetype in $filetypes
+				do
+				if [[ "$openfile" == *"$filetype" ]]; then
+					cache_mover_breaker="1"
+				fi
+				done
+		fi
+		### break if
+		if [[ "$cache_mover_breaker" == "" ]]; then
+			echo "Filetype doesnt match, we quit here";
+			exit;
+		fi
+		cache_mover_breaker=""
+		### target is NOT on cache, processing
+		if [ ! -f "$targetfile" ]; then
+			echo "move / copy $directory_rsync/ to $targetdir/"
+			mkdir -p "$targetdir"
+			### move source files to target dir and delete file on array
+			if [ "$rsync_mode" = "move" ]; then
+				$rsync_move "$directory_rsync/" "$targetdir/"
+				find "$directory_rsync" -type d -empty -delete
+				if [ "$unraid_note" = "yes" ]; then
+					/usr/local/emhttp/webGui/scripts/notify -e "Move Note" -s "$targetdir/" -i "normal" &
+				fi
+			fi
+			### copy source files to target dir, keep Original
+			if [ "$rsync_mode" = "copy" ]; then
+				$rsync_copy "$directory_rsync/" "$targetdir/"
+				if [ "$unraid_note" = "yes" ]; then
+					/usr/local/emhttp/webGui/scripts/notify -e "Copy Note" -s "$targetdir/" -i "normal" &
+				fi
+			fi
+			### add to mover tuning exclusion
+			if [ "$move_excl" = "yes" ]; then
+				echo "$targetdir" >> $move_excl_list
+				awk -i inplace '!seen[$0]++' $move_excl_list
+			fi
+			### lookup for open file descriptor if there is a current access
+			openfile_disk=$(ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "$disk_open" | grep -i "$filename" | sed '$!d')
+			if [ ! -z "$openfile_disk" ]; then
+				process_id=$(echo $openfile_disk | awk '{ print $9; }' | cut -f 3 -d "/")
+				file_descr=$(echo $openfile_disk | awk '{ print $9; }' | cut -f 5 -d "/")
+				openpath_disk=$(echo $openfile_disk | awk '{ print $11; }' | cut -f 3 -d "/")
+				openpath="$(readlink /proc/$process_id/fd/$file_descr)"
+				### hard closing file descriptor path
+				if [ "$switch_mode" = "close" ]; then
+					echo "$openpath/ open file will be closed"
+					fdclose $process_id $file_descr
+				fi
+				### hard switching file descriptor path
+				if [ "$switch_mode" = "switch" ]; then
+					echo "$openpath"
+					echo "open file will be switched to new path"
+					sleep 1
+					dst=$(echo ${openpath/$openpath_disk/$pool})
+					echo "$dst"
+					if gdb --version > /dev/null 2>&1; then
+						echo "ready to switch live"
+					else
+						echo "Unable to find gdb, check readme"
+						exit 1
+					fi
+					(
+					echo "attach $process_id"
+					echo 'call (int)open("'$dst'", 00|0100|02000, 0666)'
+					echo 'call (int)dup2($1,'$file_descr')'
+					echo 'call (int)close($1)'
+					echo 'detach'; echo 'quit'
+					) | gdb -q -x -
+				fi
+			fi
+		fi
+		### target is on cache, update access time only
+		if [ -f "$targetfile" ]; then
+			echo "update access time: $targetdir"
+			touch -a "$targetdir"
+			directory=$(dirname "$targetdir")
+			touch -a "$targetdir"
+		fi
+		done
+fi
+
+### rm openfiles
+rm $tmp_openfiles 2> /dev/null
+rm $check_openfiles 2> /dev/null
+
+### update mover ignore list ###
+$listupdater
+
+exit;

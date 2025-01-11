@@ -7,34 +7,45 @@ Tabs="true"
 ---
 <?php
 $cachemoversettings            = parse_ini_file("/boot/config/plugins/cache-mover/cachemoversettings",true);
+// cache mover
 $cachemoversettings_disks        = isset($cachemoversettings['disks']) ? $cachemoversettings['disks'] : "";
-$cachemoversettings_pool        = isset($cachemoversettings['pool']) ? $cachemoversettings['pool'] : "";
 $cachemoversettings_subfolders        = isset($cachemoversettings['subfolders']) ? $cachemoversettings['subfolders'] : "";
 $cachemoversettings_filetypes        = isset($cachemoversettings['filetypes']) ? $cachemoversettings['filetypes'] : "";
+$cachemoversettings_pool        = isset($cachemoversettings['pool']) ? $cachemoversettings['pool'] : "";
 $cachemoversettings_wait_todo        = isset($cachemoversettings['wait_todo']) ? $cachemoversettings['wait_todo'] : "";
-$cachemoversettings_move_excl        = isset($cachemoversettings['move_excl']) ? $cachemoversettings['move_excl'] : "";
-$cachemoversettings_move_excl_list        = isset($cachemoversettings['move_excl_list']) ? $cachemoversettings['move_excl_list'] : "";
-$cachemoversettings_move_tune_list        = isset($cachemoversettings['move_tune_list']) ? $cachemoversettings['move_tune_list'] : "";
-$cachemoversettings_exclusions        = isset($cachemoversettings['exclusions']) ? $cachemoversettings['exclusions'] : "";
 $cachemoversettings_rsync_mode        = isset($cachemoversettings['rsync_mode']) ? $cachemoversettings['rsync_mode'] : "";
-$cachemoversettings_rsync_move        = isset($cachemoversettings['rsync_move']) ? $cachemoversettings['rsync_move'] : "";
-$cachemoversettings_rsync_copy        = isset($cachemoversettings['rsync_copy']) ? $cachemoversettings['rsync_copy'] : "";
 $cachemoversettings_switch_mode        = isset($cachemoversettings['switch_mode']) ? $cachemoversettings['switch_mode'] : "";
+$cachemoversettings_exclusions        = isset($cachemoversettings['exclusions']) ? $cachemoversettings['exclusions'] : "";
+// cache keepalive
 $cachemoversettings_time_keephours        = isset($cachemoversettings['time_keephours']) ? $cachemoversettings['time_keephours'] : "";
 $cachemoversettings_time_keephours_sub        = isset($cachemoversettings['time_keephours_sub']) ? $cachemoversettings['time_keephours_sub'] : "";
 $cachemoversettings_subfolder_keep_sub        = isset($cachemoversettings['subfolder_keep_sub']) ? $cachemoversettings['subfolder_keep_sub'] : "";
+// cache processing
 $cachemoversettings_target_keephours        = isset($cachemoversettings['target_keephours']) ? $cachemoversettings['target_keephours'] : "";
+$cachemoversettings_move_excl_list        = isset($cachemoversettings['move_excl_list']) ? $cachemoversettings['move_excl_list'] : "";
+$cachemoversettings_move_tune_list        = isset($cachemoversettings['move_tune_list']) ? $cachemoversettings['move_tune_list'] : "";
+$cachemoversettings_move_excl        = isset($cachemoversettings['move_excl']) ? $cachemoversettings['move_excl'] : "";
+// cache recycle
 $cachemoversettings_use_recycle        = isset($cachemoversettings['use_recycle']) ? $cachemoversettings['use_recycle'] : "";
 $cachemoversettings_recycle_folder        = isset($cachemoversettings['recycle_folder']) ? $cachemoversettings['recycle_folder'] : "";
-$cachemoversettings_unraid_note        = isset($cachemoversettings['unraid_note']) ? $cachemoversettings['unraid_note'] : "";
-$cachemoversettings_script_cron        = isset($cachemoversettings['script_cron']) ? $cachemoversettings['script_cron'] : "";
-$cachemoversettings_clean_cron        = isset($cachemoversettings['clean_cron']) ? $cachemoversettings['clean_cron'] : "";
 // Log
 $cachemoversettings_unraid_syslog        = isset($cachemoversettings['unraid_syslog']) ? $cachemoversettings['unraid_syslog'] : "";
+$cachemoversettings_unraid_note        = isset($cachemoversettings['unraid_note']) ? $cachemoversettings['unraid_note'] : "";
 shell_exec("/usr/local/emhttp/plugins/cache-mover/scripts/cache_logs.sh");
 // Cron States
 $cachemoversettings_script_cron_state        = isset($cachemoversettings['script_cron_state']) ? $cachemoversettings['script_cron_state'] : "";
 $cachemoversettings_clean_cron_state        = isset($cachemoversettings['clean_cron_state']) ? $cachemoversettings['clean_cron_state'] : "";
+$cachemoversettings_script_cron        = isset($cachemoversettings['script_cron']) ? $cachemoversettings['script_cron'] : "";
+$cachemoversettings_clean_cron        = isset($cachemoversettings['clean_cron']) ? $cachemoversettings['clean_cron'] : "";
+// Cron rsync
+$cachemoversettings_rsync_move        = isset($cachemoversettings['rsync_move']) ? $cachemoversettings['rsync_move'] : "";
+$cachemoversettings_rsync_copy        = isset($cachemoversettings['rsync_copy']) ? $cachemoversettings['rsync_copy'] : "";
+// cache MediaServer
+$cachemoversettings_mediaserver_type        = isset($cachemoversettings['mediaserver_type']) ? $cachemoversettings['mediaserver_type'] : "";
+$cachemoversettings_mediaserver_host        = isset($cachemoversettings['mediaserver_host']) ? $cachemoversettings['mediaserver_host'] : "";
+$cachemoversettings_mediaserver_port        = isset($cachemoversettings['mediaserver_port']) ? $cachemoversettings['mediaserver_port'] : "";
+$cachemoversettings_mediaserver_key        = isset($cachemoversettings['mediaserver_key']) ? $cachemoversettings['mediaserver_key'] : "";
+$cachemoversettings_mediaserver_only        = isset($cachemoversettings['mediaserver_only']) ? $cachemoversettings['mediaserver_only'] : "";
 ?>
 
 <script>
@@ -160,6 +171,40 @@ Expire Target Dir:
     <blockquote class='inline_help'>
         <p>disk where to move back when move instead copy was used after keep hours are expired</p>
         <p>also where to look for existing file in terms of copy used</p>
+    </blockquote>
+
+<div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover Setup - Media Server</span></div>
+
+Media Server Type:
+: <input type="text" name="mediaserver_type" class="narrow" maxlength="99" value="<?=$cachemoversettings_mediaserver_type;?>" placeholder="jelly emby plex" >
+    <blockquote class='inline_help'>
+        <p>either jelly, emby or plex as Mediaserver Type</p>
+    </blockquote>
+
+Media Server Host(IP):
+: <input type="text" name="mediaserver_host" class="narrow" maxlength="99" value="<?=$cachemoversettings_mediaserver_host;?>" placeholder="192.168.1.71" >
+    <blockquote class='inline_help'>
+        <p>Hostname or IP to your Mediaserver, IP prefered</p>
+    </blockquote>
+
+Media Server Port:
+: <input type="text" name="mediaserver_port" class="narrow" maxlength="99" value="<?=$cachemoversettings_mediaserver_port;?>" placeholder="8096" >
+    <blockquote class='inline_help'>
+        <p>Port to your Mediaserver, jelly, emby Standard 8096. Plex Standard 32400</p>
+    </blockquote>
+
+Media Server API Key(Token):
+: <input type="password" name="mediaserver_key" class="narrow" maxlength="99" value="<?=$cachemoversettings_mediaserver_key;?>" placeholder="jelly emby API Plex Token" >
+    <blockquote class='inline_help'>
+        <p>API Key (emby, jelly) or Token (plex) to your Mediaserver</p>
+		<p>emby, jelly, for API Key - Media Server Web UI,Settings, API, add ...</p>
+		<p>plex, for Token - https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/</p>
+    </blockquote>
+
+Media Server Mode:
+: <input type="text" name="mediaserver_only" class="narrow" maxlength="99" value="<?=$cachemoversettings_mediaserver_only;?>" placeholder="only multi" >
+    <blockquote class='inline_help'>
+        <p>only (Media Server only mode) multi (Media Server and regular mode) empty (regular mode only)</p>
     </blockquote>
 
 <div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover Setup - Recycle Setup</span></div>
