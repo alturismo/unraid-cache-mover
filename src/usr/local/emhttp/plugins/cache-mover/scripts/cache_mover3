@@ -91,7 +91,9 @@ for folder in $(cat "$move_excl_list")
 		fi
 	else
 		echo "$folder is not there"
-		grep -v "$folder" $move_excl_list > temp_show_list && mv temp_show_list $move_excl_list		## remove non existend from list
+		folder_to_remove=$(echo "$folder" | sed 's/[][]/\\&/g')
+		grep -v "$folder_to_remove" $move_excl_list > temp_show_list
+		mv temp_show_list $move_excl_list
 	fi
 	done
 
