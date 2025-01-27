@@ -2,11 +2,15 @@
 
 ################################
 source /boot/config/plugins/cache-mover/cachemoversettings
-
 ################################
 listupdater="/usr/local/emhttp/plugins/cache-mover/scripts/cache_mover4"
 
+subfolders=$(echo $subfolders | sed 's/ /|/g')
+filetypes=$(echo $filetypes | sed 's/ /|/g')
+exclusions=$(echo $exclusions | sed 's/ /|/g')
+
 ### Check if another instance of this Program is running
+sleep 1
 pidof -o %PPID -x $0 >/dev/null && echo "ERROR: Program $0 already running" && exit 1
 
 ################################
@@ -27,138 +31,142 @@ if [ "$mediaserver_only" == "only" ]; then
 	exit;
 fi
 
+### remove leading trailing slashes
+pool="${pool#/}"
+pool="${pool%/}"
+################################
+tmp_openfiles="/usr/local/emhttp/plugins/cache-mover/tmp_openfiles3txt"
+check_openfiles="/usr/local/emhttp/plugins/cache-mover/check_openfiles3.txt"
+
+### rm openfiles
+rm $tmp_openfiles 2> /dev/null
+rm $check_openfiles 2> /dev/null
+
 ################################
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
-### copy / mover lookup and action
-for disk in $disks
-	do
-for subfolder in $subfolders
-	do
-for filetype in $filetypes
-	do
-	openfile=""
-	openpath=""
-	opencheck=""
-	targetdir=""
-	openfile=$(ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/mnt/$disk" | grep -i "/$subfolder" | grep -i "$filetype" | sed '$!d')
-		if [ ! -z "$openfile" ]; then
-			process_id=$(echo $openfile | awk '{ print $9; }' | cut -f 3 -d "/")
-			file_descr=$(echo $openfile | awk '{ print $9; }' | cut -f 5 -d "/")
-			openpath="$(readlink /proc/$process_id/fd/$file_descr)"
-			### break if there is a exclusion match
-			if [ ! -z "$exclusions" ]; then
-			for excluded in $exclusions
-				do
-				if [[ "$openpath" == *"$excluded"* ]]; then
-					echo "$excluded is excluded, we quit here";
-					exit;
-				fi
-				done
-			fi
-			### break if file is in write mode
-			write_check=$(echo $openfile | cut -f 1 -d " ")
-			if [[ "$write_check" =~ ^lrw.* ]] || [[ "$write_check" =~ ^l-w.* ]]; then
-				echo "$openpath is in write mode, we quit here"
-				exit;
-			fi
-			directory=$(dirname "$openpath")
-			echo "open dir on $disk: $directory"
-			### wait and look if file is still open
-			sleep $wait_todo
-			opencheck=$(ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/mnt/$disk" | grep -i "/$subfolder" | grep -i "$filetype" | sed '$!d')
-			### break if file is in write mode
-			write_check=$(echo $opencheck | cut -f 1 -d " ")
-			if [[ "$write_check" =~ ^lrw.* ]] || [[ "$write_check" =~ ^l-w.* ]]; then
-				echo "$openpath is in write mode, we quit here"
-				exit;
-			fi
-			opencheck="$(readlink /proc/$process_id/fd/$file_descr)"
-			if [ "$openpath" == "$opencheck" ]; then
-				targetdir=$(echo ${directory/$disk/$pool})
-				echo "move / copy $directory/ to $targetdir/"
-				mkdir -p "$targetdir"
-				## move source files to target dir and delete file on array
-				if [ "$rsync_mode" = "move" ]; then
-					$rsync_move "$directory/" "$targetdir/"
-					find "$directory" -type d -empty -delete
-					if [ "$unraid_note" = "yes" ]; then
-						/usr/local/emhttp/webGui/scripts/notify -e "Move Note" -s "$targetdir/" -i "normal" &
-					fi
-				fi
-				## copy source files to target dir, keep Original
-				if [ "$rsync_mode" = "copy" ]; then
-					$rsync_copy "$directory/" "$targetdir/"
-					if [ "$unraid_note" = "yes" ]; then
-						/usr/local/emhttp/webGui/scripts/notify -e "Copy Note" -s "$targetdir/" -i "normal" &
-					fi
-				fi
-				## add to mover tuning exclusion
-				if [ "$move_excl" = "yes" ]; then
-					echo "$targetdir" >> $move_excl_list
-					awk -i inplace '!seen[$0]++' $move_excl_list
-				fi
-				## hard closing file descriptor path
-				if [ "$switch_mode" = "close" ]; then
-					echo "$directory/ open file will be closed"
-					fdclose $process_id $file_descr
-				fi
-				## hard switching file descriptor path
-				if [ "$switch_mode" = "switch" ]; then
-				    echo "$openpath"
-					echo "open file will be switched to new path"
-					sleep 1
-					dst=$(echo ${openpath/$disk/$pool})
-					echo "$dst"
-					if gdb --version > /dev/null 2>&1; then
-						echo "ready to switch live"
-					else
-						echo "Unable to find gdb, check readme"
-						exit 1
-					fi
-					(
-					echo "attach $process_id"
-					echo 'call (int)open("'$dst'", 00|0100|02000, 0666)'
-					echo 'call (int)dup2($1,'$file_descr')'
-					echo 'call (int)close($1)'
-					echo 'detach'; echo 'quit'
-					) | gdb -q -x -
-				fi
-			else
-				echo "no copy/move for $directory"
-			fi
-		fi
-	done
-	done
-	done
-
-### update mover ignore list ###
-$listupdater
-
-### update access time on active pool disk
-for subfolder in $subfolders
-	do
-for filetype in $filetypes
-	do
-		openfile=$(ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/mnt/$pool" | grep -i "/$subfolder" | grep -i "$filetype$" | sed '$!d')
-		if [ ! -z "$openfile" ]; then
-			process_id=$(echo $openfile | awk '{ print $9; }' | cut -f 3 -d "/")
-			file_descr=$(echo $openfile | awk '{ print $9; }' | cut -f 5 -d "/")
-			openpath="$(readlink /proc/$process_id/fd/$file_descr)"
-			directory=$(dirname "$openpath")
-			echo "update access time: $directory"
-			touch -a "$directory"
-			directory=$(dirname "$directory")
-			touch -a "$directory"
-		fi
-	done
-	done
-
-## MediaServer Mode check
-if [ "$mediaserver_only" == "multi" ]; then
-	/usr/local/emhttp/plugins/cache-mover/scripts/cache_mover1
+### check open files on disks
+ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/disk" | grep -E "$subfolders" | grep -E "$filetypes" | sed '$!d' > $tmp_openfiles
+### lookup openfile, abort if empty and rm temp openfiles
+if [ ! -s $tmp_openfiles ]; then
+	#echo "nothing played, aborting here"
+	rm $tmp_openfiles
 	exit;
 fi
+### wait and look again (1 loop)
+if [ -s $tmp_openfiles ]; then
+	### create check openfile
+	mv $tmp_openfiles $check_openfiles
+	### wait and look if file is still open
+	sleep $wait_todo
+	### check open files on disks (checkup)
+	ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/disk" | grep -E "$subfolders" | grep -E "$filetypes" | sed '$!d' > $tmp_openfiles
+fi
+### check if file is still open
+if ! cmp --silent "$check_openfiles" "$tmp_openfiles"; then
+	echo "file changed during wait, exiting here"
+	exit;
+fi
+### fetch details and build pathes to progress
+shopt -s lastpipe
+cat $tmp_openfiles | while read tmp_openfile
+	do
+	openfile="/$(echo "${tmp_openfile#*/}")"
+	process_id=$(echo $openfile | awk '{ print $1; }' | cut -f 3 -d "/")
+	file_descr=$(echo $openfile | awk '{ print $1; }' | cut -f 5 -d "/")
+	openpath="$(readlink /proc/$process_id/fd/$file_descr)"
+	directory=$(dirname "$openpath")
+	filename=$(basename "$openpath")
+	diskname=$(echo $openpath | awk '{ print $1; }' | cut -f 3 -d "/")
+	if [ $diskname == "disks" ]; then
+		subdisk=$(echo $openpath | awk '{ print $1; }' | cut -f 4 -d "/")
+		diskname="$diskname/$subdisk"
+	fi
+	poolpath=$(echo ${openpath/$diskname/$pool})
+	rsync_source=$(dirname "$openpath")
+	rsync_target=$(dirname "$poolpath")
+	done
+### break if there is no subfolder match
+if [ ! -z "$subfolders" ]; then
+	if [[ $(cat $tmp_openfiles | grep -E "$subfolders") == "" ]]; then
+		echo "not matching $subfolders, breaking here"
+		exit;
+	fi
+fi
+### break if there is no filetype match
+if [ ! -z "$filetypes" ]; then
+	if [[ $(cat $tmp_openfiles | grep -E "$filetypes") == "" ]]; then
+		echo "not matching $filetypes, breaking here"
+		exit;
+	fi
+fi
+### break if there is a exclusion match
+if [ ! -z "$exclusions" ]; then
+	if [[ ! $(cat $tmp_openfiles | grep -E "$exclusions") == "" ]]; then
+		echo "matching exclusion $exclusions, breaking here"
+		exit;
+	fi
+fi
+### pool lookup and break after update access time
+if [ -f "$poolpath" ]; then
+	echo "update access time: $rsync_target"
+	touch -a "$rsync_target"
+	directory=$(dirname "$rsync_target")
+	touch -a "$directory"
+	exit;
+fi
+### pool only file and break after update access time
+if [ -z "$openpath" ]; then
+	echo "update access time pool only dir: $directory"
+	touch -a "$directory"
+	directory=$(dirname "$directory")
+	touch -a "$directory"
+	exit;
+fi
+### copy source files to target dir
+if [ ! -f "$poolpath" ]; then
+	if [ $rsync_mode == "file" ]; then
+		$rsync_copy "$openpath" "$poolpath"
+	else
+		$rsync_copy "$rsync_source/" "$rsync_target/"
+	fi
+	if [ "$unraid_note" = "yes" ]; then
+		/usr/local/emhttp/webGui/scripts/notify -e "Copy Note" -s "$rsync_target/" -i "normal" &
+	fi
+fi
+### add to mover tuning exclusion
+if [ "$move_excl" = "yes" ]; then
+	echo "$rsync_target" >> $move_excl_list  2> /dev/null
+	awk -i inplace '!seen[$0]++' $move_excl_list 2> /dev/null
+fi
+### switch file descriptor
+### hard closing file descriptor path
+if [ "$switch_mode" = "close" ]; then
+	echo "$openpath/ open file will be closed"
+	fdclose $process_id $file_descr
+fi
+### hard switching file descriptor path
+if [ "$switch_mode" = "switch" ]; then
+	echo "open file $filename will be switched $pool now"
+	sleep 1
+	dst="$poolpath"
+	echo "$dst"
+	if gdb --version > /dev/null 2>&1; then
+		echo "ready to switch live"
+	else
+		echo "Unable to find gdb, check readme"
+		exit 1
+	fi
+	(
+	echo "attach $process_id"
+	echo 'call (int)open("'$dst'", 00|0100|02000, 0666)'
+	echo 'call (int)dup2($1,'$file_descr')'
+	echo 'call (int)close($1)'
+	echo 'detach'; echo 'quit'
+	) | gdb -q -x -
+fi
+### update mover ignore list ###
+$listupdater
 
 exit;

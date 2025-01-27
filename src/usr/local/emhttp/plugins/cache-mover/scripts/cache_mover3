@@ -42,7 +42,15 @@ for folder in $(cat "$move_excl_list")
 		else
 			keephours=$time_keephours
 		fi
-		targetdir=$(echo ${folder/$pool/$target_keephours})
+		if [ ! -z $target_keephours ]; then
+			targetdir=$(echo ${folder/$pool/$target_keephours})
+		else
+			targetdir=$(echo ${folder/"/mnt/$pool"/})
+			targetdir=$(ls -d /mnt/disk*/$targetdir | grep -v "$pool") 2> /dev/null
+			if [ -z $targetdir ];then
+				targetdir=$(ls -d /mnt/disk*/*/$targetdir | grep -v "$pool") 2> /dev/null
+			fi
+		fi
 		if [ $last_access -gt $keephours ]; then
 			if [ -d $targetdir/ ]; then
 				if [ $(du -sh $folder/ | sed 's/\s.*$//') == $(du -sh $targetdir/ | sed 's/\s.*$//') ]; then
@@ -57,34 +65,43 @@ for folder in $(cat "$move_excl_list")
 						fi
 						mkdir -p "$recycle_target"
 						recycle_target=$(dirname $recycle_target)
-						mv "$folder/" "$recycle_target/"		## move pool files into recycle dir
-						rm -r "$folder/"
+						mv "$folder/" "$recycle_target/" 2> /dev/null	## move pool files into recycle dir
+						rm -r "$folder/" 2> /dev/null
+						folder_to_remove=$(echo "$folder" | sed 's/[][]/\\&/g')
+						grep -v "$folder_to_remove" $move_excl_list > temp_show_list
+						mv temp_show_list $move_excl_list
 					else
 						echo "removing $folder"
 						if [ "$unraid_note" = "yes" ]; then
 							/usr/local/emhttp/webGui/scripts/notify -e "Remove Note" -s "$folder/" -i "normal" &
 						fi
-						rm -r "$folder/"						## wipe from pool only
+						rm -r "$folder/" 2> /dev/null			## wipe from pool only
+						upfolder=$(dirname "$folder")
+						find "$upfolder/" -type d -empty -delete 2> /dev/null
+						folder_to_remove=$(echo "$folder" | sed 's/[][]/\\&/g')
+						grep -v "$folder_to_remove" $move_excl_list > temp_show_list
+						mv temp_show_list $move_excl_list
 					fi
 				else
-					echo "$folder $last_access ago moving back to existing $target_keephours"
+					echo "$folder $last_access ago size doesnt match on disk, please check manually"
 					if [ "$unraid_note" = "yes" ]; then
-						/usr/local/emhttp/webGui/scripts/notify -e "Move Note" -s "$targetdir/" -i "normal" &
+						/usr/local/emhttp/webGui/scripts/notify -e "Check Note" -s "$targetdir/" -i "normal" &
 					fi
-					rsync -avzht --mkpath --remove-source-files --progress "$folder/" "$targetdir/"
-					#$rsync_move "$folder/" "$targetdir/"		## rsync command variable ?
-					## move pool files back to target dir
-					find "$folder/" -type d -empty -delete					
+					find "$folder/" -type d -empty -delete 2> /dev/null
+					upfolder=$(dirname "$folder")
+					find "$upfolder/" -type d -empty -delete 2> /dev/null
+					folder_to_remove=$(echo "$folder" | sed 's/[][]/\\&/g')
+					grep -v "$folder_to_remove" $move_excl_list > temp_show_list
+					mv temp_show_list $move_excl_list
 				fi
 			else
-				echo "$folder $last_access ago moving back to $target_keephours"
+				echo "$folder $last_access ago doesnt exist on disk/s, please check manually"
 				if [ "$unraid_note" = "yes" ]; then
-					/usr/local/emhttp/webGui/scripts/notify -e "Move Note" -s "$targetdir/" -i "normal" &
+					/usr/local/emhttp/webGui/scripts/notify -e "Check Note" -s "$targetdir/" -i "normal" &
 				fi
-				rsync -avzht --mkpath --remove-source-files --progress "$folder/" "$targetdir/"
-				#$rsync_move "$folder/" "$targetdir/"			## rsync command variable ?
-				## move pool files back to target dir
-				find "$folder/" -type d -empty -delete
+				folder_to_remove=$(echo "$folder" | sed 's/[][]/\\&/g')
+				grep -v "$folder_to_remove" $move_excl_list > temp_show_list
+				mv temp_show_list $move_excl_list
 			fi
 		else
 			echo "$folder $last_access still in range"

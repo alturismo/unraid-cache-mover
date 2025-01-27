@@ -17,6 +17,13 @@ log_message() {
 exec > >(log_message) 2>&1
 
 fi
+### update rewrites once (can be removed sometime)
+if [ ! -z $rewrite_source ] && [ ! -z $rewrite_host ]; then
+        sed -i 's|^rewrite_source=.*|rewrite_source="'$rewrite_source':'$rewrite_host'"|g' /boot/config/plugins/cache-mover/cachemoversettings
+        sed -i 's|^rewrite_host=.*||g' /boot/config/plugins/cache-mover/cachemoversettings
+        sed -i '/^$/d' /boot/config/plugins/cache-mover/cachemoversettings
+        echo "updated rewrites once"
+fi
 
 ################################
 export LANG=en_US.UTF-8
@@ -50,5 +57,8 @@ mover_source_files="$move_excl_list $move_tune_list"
 	cp mover_excluded $move_tune_list
 	rm mover_excluded
 fi
+
+sed -i '/^$/d' $move_tune_list
+sed -i '/^$/d' $move_excl_list
 
 exit;

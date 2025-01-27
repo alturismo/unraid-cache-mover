@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "cache-mover">
 <!ENTITY author    "alturismo">
-<!ENTITY version   "2025.01.21">
+<!ENTITY version   "2025.01.27">
 <!ENTITY launch    "Settings/cache-mover">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/alturismo/unraid-cache-mover/master">
 <!ENTITY pluginURL "&gitURL;/&name;.plg">
@@ -20,6 +20,17 @@
         support="https://forums.unraid.net/topic/181843-support-alturismo-repos/">
  
 <CHANGES>
+ ###2025.01.27
+  - cache mover additional options
+  - cache pool (ssd) outside the regular array (see support forum for mergerfs option to benefit)
+  - multiply sources outside regular array (see support forum for mergerfs option to benefit)
+  - multiply rewrite function for Mediaserver mounts added if there is a multi array setup
+  - (see support forum for mergerfs option to benefit)
+  - no more source disk setup necessary (in terms not all disks wanted, use existing exclusion function)
+  - existing setups dont need any reconfiguration, only if new functions are wanted to usage
+  - copy file only mode (not recommended, only as feature was wished)
+  - removed move mode function, copy was and is recommended to not play ping pong with files, no more option therefore
+
  ###2025.01.21
   - fixing brackets in mover cleaning list
   - cleaning fix for empty exclusion entries, all non existend will be removed on list update

@@ -8,7 +8,6 @@ Tabs="true"
 <?php
 $cachemoversettings            = parse_ini_file("/boot/config/plugins/cache-mover/cachemoversettings",true);
 // cache mover
-$cachemoversettings_disks        = isset($cachemoversettings['disks']) ? $cachemoversettings['disks'] : "";
 $cachemoversettings_subfolders        = isset($cachemoversettings['subfolders']) ? $cachemoversettings['subfolders'] : "";
 $cachemoversettings_filetypes        = isset($cachemoversettings['filetypes']) ? $cachemoversettings['filetypes'] : "";
 $cachemoversettings_pool        = isset($cachemoversettings['pool']) ? $cachemoversettings['pool'] : "";
@@ -38,7 +37,6 @@ $cachemoversettings_clean_cron_state        = isset($cachemoversettings['clean_c
 $cachemoversettings_script_cron        = isset($cachemoversettings['script_cron']) ? $cachemoversettings['script_cron'] : "";
 $cachemoversettings_clean_cron        = isset($cachemoversettings['clean_cron']) ? $cachemoversettings['clean_cron'] : "";
 // Cron rsync
-$cachemoversettings_rsync_move        = isset($cachemoversettings['rsync_move']) ? $cachemoversettings['rsync_move'] : "";
 $cachemoversettings_rsync_copy        = isset($cachemoversettings['rsync_copy']) ? $cachemoversettings['rsync_copy'] : "";
 // cache MediaServer
 $cachemoversettings_mediaserver_type        = isset($cachemoversettings['mediaserver_type']) ? $cachemoversettings['mediaserver_type'] : "";
@@ -47,7 +45,6 @@ $cachemoversettings_mediaserver_port        = isset($cachemoversettings['mediase
 $cachemoversettings_mediaserver_key        = isset($cachemoversettings['mediaserver_key']) ? $cachemoversettings['mediaserver_key'] : "";
 $cachemoversettings_mediaserver_only        = isset($cachemoversettings['mediaserver_only']) ? $cachemoversettings['mediaserver_only'] : "";
 $cachemoversettings_rewrite_source       = isset($cachemoversettings['rewrite_source']) ? $cachemoversettings['rewrite_source'] : "";
-$cachemoversettings_rewrite_host        = isset($cachemoversettings['rewrite_host']) ? $cachemoversettings['rewrite_host'] : "";
 ?>
 
 <script>
@@ -68,12 +65,6 @@ $cachemoversettings_rewrite_host        = isset($cachemoversettings['rewrite_hos
 
 <div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover Setup</span></div>
 
-Monitor disks:
-: <input type="text" name="disks" class="narrow" maxlength="99" value="<?=$cachemoversettings_disks;?>" placeholder="disk1 disk2" >
-    <blockquote class='inline_help'>
-        <p>space separated list of source disks to look for open files, disks in array ...</p>
-    </blockquote>
-
 Media subfolders:
 : <input type="text" name="subfolders" class="narrow" maxlength="99" value="<?=$cachemoversettings_subfolders;?>" placeholder="VCD HDDVDR TVRIPS" >
     <blockquote class='inline_help'>
@@ -87,9 +78,10 @@ Media filetypes:
     </blockquote>
 
 Target pool:
-: <input type="text" name="pool" class="narrow" maxlength="20" value="<?=$cachemoversettings_pool;?>" placeholder="cache" >
+: <input type="text" name="pool" class="narrow" maxlength="50" value="<?=$cachemoversettings_pool;?>" placeholder="cache disks/uad_ssd" >
     <blockquote class='inline_help'>
         <p>target pool to copy or move on, ONLY 1 target</p>
+        <p>sample like, <cache> or <disks/uad_ssd></p>
     </blockquote>
 
 Waiting time:
@@ -99,10 +91,11 @@ Waiting time:
         <p>set long enough to avoid cached dir list movings ... 120 seconds ++</p>
     </blockquote>
 
-Cache Mover Mode:
-: <input type="text" name="rsync_mode" class="narrow" maxlength="4" value="<?=$cachemoversettings_rsync_mode;?>" placeholder="copy" >
+Cache Copy Mode:
+: <input type="text" name="rsync_mode" class="narrow" maxlength="6" value="<?=$cachemoversettings_rsync_mode;?>" placeholder="folder file" >
     <blockquote class='inline_help'>
-        <p>copy (to pool and also keep on array, RECOMMENDED !!!) or move (and del from array)</p>
+        <p>folder (or empty) as recommended way, will copy complete folder where file in use reside, inkl. subs, ... TV Shows all episodes from season</p>
+        <p>file, will copy ONLY the single file in use, NOT recommended, subs, next episode, ...</p>
     </blockquote>
 
 Cache Mover Switch Mode:
@@ -116,7 +109,7 @@ Cache Mover Switch Mode:
 Cache Mover Exclusions:
 : <input type="text" name="exclusions" class="narrow" maxlength="99" value="<?=$cachemoversettings_exclusions;?>" placeholder="/path1 /path2" >
     <blockquote class='inline_help'>
-        <p>excluded subfolders to look for, space seperated, sample "/path1 /path2" ...</p>
+        <p>excluded subfolders, disks, ... to look for, space seperated, sample "/path1 /path2" ...</p>
         <p>plugin will stop execution if ... so should be unique names</p>
         <p>leave empty if not needed</p>
     </blockquote>
@@ -145,14 +138,14 @@ Subfolder Keep Hours Secondary:
 
 <div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover Setup - Processing and Mover Tuning</span></div>
 
-Script List:
+Postprocessing List:
 : <input type="text" name="move_excl" class="narrow" maxlength="3" value="<?=$cachemoversettings_move_excl;?>" placeholder="yes" >
     <blockquote class='inline_help'>
         <p>enable "yes" or disable "no" Script working list</p>
-        <p>mandatory for further processing and mover tuning plugin ... otherwise cleanup manually</p>
+        <p>mandatory for further processing and mover tuning plugin ... otherwise cleanup manually ...</p>
     </blockquote>
 
-Script List filepath:
+Postprocessing List filepath:
 : <input type="text" name="move_excl_list" class="narrow" maxlength="99" value="<?=$cachemoversettings_move_excl_list;?>" placeholder="/mnt/user/system/mover/mover_excl.txt" >
     <blockquote class='inline_help'>
         <p>temp exclusion list for further processing, to add to mover tuning list</p>
@@ -171,8 +164,8 @@ Mover Tuning Ignore List filepath:
 Expire Target Dir:
 : <input type="text" name="target_keephours" class="narrow" maxlength="99" value="<?=$cachemoversettings_target_keephours;?>" placeholder="user0" >
     <blockquote class='inline_help'>
-        <p>disk where to move back when move instead copy was used after keep hours are expired</p>
-        <p>also where to look for existing file in terms of copy used</p>
+        <p>only useful when Standard Array is used, leave empty if not Standard, when not empty, we will always look only here for existing ...</p>
+		<p>if empty, we will search on all existing disk/s which are NOT pool configured and look there</p>
     </blockquote>
 
 <div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover Setup - Media Server</span></div>
@@ -209,20 +202,13 @@ Media Server Mode:
         <p>only (Media Server only mode) multi (Media Server and regular mode) empty (regular mode only)</p>
     </blockquote>
 
-Media Server mountpoint:
-: <input type="text" name="rewrite_source" class="narrow" maxlength="99" value="<?=$cachemoversettings_rewrite_source;?>" placeholder="/data" >
+Media Server Rewrites:
+: <input type="text" name="rewrite_source" class="narrow" maxlength="99" value="<?=$cachemoversettings_rewrite_source;?>" placeholder="/data:/mnt/user/Media" >
     <blockquote class='inline_help'>
-        <p>in case there is no 1:1 condition (mnt <> mnt) Mediaserver to host, here the Docker Path like /data</p>
+        <p>in case there is no 1:1 condition (mnt <> mnt) Mediaserver to host, here the Docker:Host Path like /data:/mnt/user/Media</p>
         <p>please check the mountpoint from your docker, compare how the host path would look like</p>
 		<p>also keep leading / trailing slashes simultan to host value</p>
-    </blockquote>
-
-Media Server host path:
-: <input type="text" name="rewrite_host" class="narrow" maxlength="99" value="<?=$cachemoversettings_rewrite_host;?>" placeholder="/mnt/user/Media" >
-    <blockquote class='inline_help'>
-        <p>in case there is no 1:1 condition (mnt <> mnt) Mediaserver to host, here the Host Path, recommended /mnt/user</p>
-        <p>please check the mountpoint from your docker, compare how the host path would look like</p>
-		<p>also keep leading / trailing slashes simultan to mountpoint value</p>
+		<p>space seperated multiply values are possible in terms multi array is used ...</p>
     </blockquote>
 
 <div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover Setup - Recycle Setup</span></div>
@@ -283,14 +269,7 @@ Unraid Notifications:
     <input type="button" value="Apply" onClick="send('apply')">
 </div>
 
-<div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover Setup - Rsync Commands</span></div>
-
-rsync move command:
-: <input type="text" name="rsync_move" class="narrow" maxlength="99" value="<?=$cachemoversettings_rsync_move;?>" placeholder="rsync -avzht --mkpath --remove-source-files --progress" >
-    <blockquote class='inline_help'>
-        <p>used rsync command to move from array to pool</p>
-		<p>changes on own risk</p>
-    </blockquote>
+<div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover Setup - Rsync Copy Command</span></div>
 
 rsync copy command:
 : <input type="text" name="rsync_copy" class="narrow" maxlength="99" value="<?=$cachemoversettings_rsync_copy;?>" placeholder="rsync -avzht --mkpath --progress" >
