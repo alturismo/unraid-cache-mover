@@ -159,9 +159,11 @@ if [ ! -f "$poolpath" ]; then
 	caching_done="ok"
 fi
 ### add to mover tuning exclusion
-if [ "$move_excl" = "yes" ]; then
-	echo "$rsync_target" >> $move_excl_list  2> /dev/null
-	awk -i inplace '!seen[$0]++' $move_excl_list 2> /dev/null
+if [ "$caching_done" = "ok" ]; then
+	if [ "$move_excl" = "yes" ]; then
+		echo "$rsync_target" >> $move_excl_list  2> /dev/null
+		awk -i inplace '!seen[$0]++' $move_excl_list 2> /dev/null
+	fi
 fi
 ### switch file descriptor
 if [ "$caching_done" = "ok" ]; then

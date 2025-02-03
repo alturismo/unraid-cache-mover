@@ -51,168 +51,141 @@ if [ "$mediaserver_type" == "jelly" ] || [ "$mediaserver_type" == "emby" ]; then
 	#echo "$mediaserver_type mode"
 	wget -q -O - "http://$mediaserver_host:$mediaserver_port/emby/Sessions?api_key=$mediaserver_key" | \
 	jq '.[] | {NowPlayingItem: .NowPlayingItem.Path} | select(.NowPlayingItem!=null)' | \
-	sed 's|{||g;s|}||g;s|"NowPlayingItem":||g;s|"||g;s|^[ \t]*||;/^[[:space:]]*$/d' | sed '$!d' \
+	sed 's|{||g;s|}||g;s|"NowPlayingItem":||g;s|"||g;s|^[ \t]*||;/^[[:space:]]*$/d' | shuf -n 1 \
 	> $tmp_openfiles
 fi
-
 ### plex openfile
 if [ "$mediaserver_type" == "plex" ]; then
 	#echo "$mediaserver_type mode"
-	curl -s -H "Accept: application/json" http://$mediaserver_host:$mediaserver_port/status/sessions?X-Plex-Token=$mediaserver_key | \
-	jq '.MediaContainer.Metadata[]?.key' | \
-	xargs -I{} sh -c 'curl -s -H "Accept: application/json" '$mediaserver_host':'$mediaserver_port'{}?X-Plex-Token=$mediaserver_key | jq .MediaContainer.Metadata[].Media[].Part[].file' | \
-	sed 's|{||g;s|}||g;s|"NowPlayingItem":||g;s|"||g;s|^[ \t]*||;/^[[:space:]]*$/d' | sed '$!d' \
+	KEY=$(curl -s "http://$mediaserver_host:$mediaserver_port/status/sessions?X-Plex-Token=$mediaserver_key" 2> /dev/null | grep -oP 'ratingKey="\K[^"]+' | shuf -n 1)
+	curl -s "http://$mediaserver_host:$mediaserver_port/library/metadata/$KEY?X-Plex-Token=$mediaserver_key" 2> /dev/null | grep -oP 'file="\K[^"]+' | grep -E "$subfolders" | sed '$!d' \
 	> $tmp_openfiles
 fi
-### lookup openfile, abort if empty and rm temp openfiles
-if [ ! -s $tmp_openfiles ]; then
-	#echo "nothing played, aborting here"
-	rm $tmp_openfiles
-	exit;
-fi
-### wait and look again (1 loop)
+### check if and then do
 if [ -s $tmp_openfiles ]; then
-	### create check openfile
-	mv $tmp_openfiles $check_openfiles
-	### wait and look if file is still open
-	sleep $wait_todo
-	### emby / jelly openfile
-	if [ "$mediaserver_type" == "jelly" ] || [ "$mediaserver_type" == "emby" ]; then
-		#echo "$mediaserver_type mode"
-		wget -q -O - "http://$mediaserver_host:$mediaserver_port/emby/Sessions?api_key=$mediaserver_key" | \
-		jq '.[] | {NowPlayingItem: .NowPlayingItem.Path} | select(.NowPlayingItem!=null)' | \
-		sed 's|{||g;s|}||g;s|"NowPlayingItem":||g;s|"||g;s|^[ \t]*||;/^[[:space:]]*$/d' | sed '$!d' \
-		> $tmp_openfiles
+	### rewrite Mediaserver mount path if not 1:1
+	if [ -n "$rewrite_source" ]; then
+		for rewrite in $rewrite_source
+			do
+			rew_source=$(echo $rewrite | cut -f1 -d ":")
+			rew_target=$(echo $rewrite | cut -f2 -d ":")
+			rew_source="${rew_source%/}"
+			rew_target="${rew_target%/}"
+			sed -i "s|$rew_source|$rew_target|g" $tmp_openfiles
+			done
 	fi
-	### plex openfile
-	if [ "$mediaserver_type" == "plex" ]; then
-		#echo "$mediaserver_type mode"
-		curl -s -H "Accept: application/json" http://$mediaserver_host:$mediaserver_port/status/sessions?X-Plex-Token=$mediaserver_key | \
-		jq '.MediaContainer.Metadata[]?.key' | \
-		xargs -I{} sh -c 'curl -s -H "Accept: application/json" '$mediaserver_host':'$mediaserver_port'{}?X-Plex-Token=$mediaserver_key | jq .MediaContainer.Metadata[].Media[].Part[].file' | \
-		sed 's|{||g;s|}||g;s|"NowPlayingItem":||g;s|"||g;s|^[ \t]*||;/^[[:space:]]*$/d' | sed '$!d' \
-		> $tmp_openfiles
-	fi
-fi
-### check if file is still open
-if ! cmp --silent "$check_openfiles" "$tmp_openfiles"; then
-	echo "file changed during wait, exiting here"
-	exit;
-fi
-### rewrite Mediaserver mount path if not 1:1
-if [ -n "$rewrite_source" ]; then
-	for rewrite in $rewrite_source
+	### fetch details and build pathes to progress
+	shopt -s lastpipe
+	cat $tmp_openfiles | while read tmp_openfile
 		do
-		rew_source=$(echo $rewrite | cut -f1 -d ":")
-		rew_target=$(echo $rewrite | cut -f2 -d ":")
-		rew_source="${rew_source%/}"
-		rew_target="${rew_target%/}"
-		sed -i "s|$rew_source|$rew_target|g" $tmp_openfiles
-		done
-fi
-### fetch details and build pathes to progress
-shopt -s lastpipe
-cat $tmp_openfiles | while read tmp_openfile
-	do
-	openfile="/$(echo "${tmp_openfile#*/}")"
-	directory=$(dirname "$openfile")
-	filename=$(basename "$openfile")
-	diskpath=$(find /mnt/disk* -type f -name "$filename")
-	diskname=$(echo $diskpath | awk '{ print $1; }' | cut -f 3 -d "/")
-	if [ "$diskname" == "disks" ]; then
-		subdisk=$(echo $openpath | awk '{ print $1; }' | cut -f 4 -d "/")
-		diskname="$diskname/$subdisk"
-	fi
-	poolpath=$(echo ${diskpath/$diskname/$pool})
-	rsync_source=$(dirname "$diskpath")
-	rsync_target=$(dirname "$poolpath")
-	done
-### break if there is no subfolder match
-if [ ! -z "$subfolders" ]; then
-	if [[ $(cat $tmp_openfiles | grep -E "$subfolders") == "" ]]; then
-		echo "not matching $subfolders, breaking here"
-		exit;
-	fi
-fi
-### break if there is no filetype match
-if [ ! -z "$filetypes" ]; then
-	if [[ $(cat $tmp_openfiles | grep -E "$filetypes") == "" ]]; then
-		echo "not matching $filetypes, breaking here"
-		exit;
-	fi
-fi
-### break if there is a exclusion match
-if [ ! -z "$exclusions" ]; then
-	if [[ ! $(cat $tmp_openfiles | grep -E "$exclusions") == "" ]]; then
-		echo "matching exclusion $exclusions, breaking here"
-		exit;
-	fi
-fi
-### pool lookup and break after update access time
-if [ -f "$poolpath" ]; then
-	echo "update access time: $rsync_target"
-	touch -a "$rsync_target"
-	directory=$(dirname "$rsync_target")
-	touch -a "$directory"
-	exit;
-fi
-### pool only file and break after update access time
-if [ -z "$diskpath" ]; then
-	echo "update access time pool only dir: $directory"
-	touch -a "$directory"
-	directory=$(dirname "$directory")
-	touch -a "$directory"
-	exit;
-fi
-### copy source files to target dir
-if [ ! -f "$poolpath" ]; then
-	if [ $rsync_mode == "file" ]; then
-		$rsync_copy "$diskpath" "$poolpath"
-	else
-		$rsync_copy "$rsync_source/" "$rsync_target/"
-	fi
-	if [ "$unraid_note" = "yes" ]; then
-		/usr/local/emhttp/webGui/scripts/notify -e "Copy Note" -s "$rsync_target/" -i "normal" &
-	fi
-fi
-### add to mover tuning exclusion
-if [ "$move_excl" = "yes" ]; then
-	echo "$rsync_target" >> $move_excl_list  2> /dev/null
-	awk -i inplace '!seen[$0]++' $move_excl_list 2> /dev/null
-fi
-### lookup for open file descriptor if there is a current access
-openfile_disk=$(ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "$diskpath" | sed '$!d')
-### switch file descriptor
-if [ ! -z "$openfile_disk" ]; then
-	process_id=$(echo $openfile_disk | awk '{ print $9; }' | cut -f 3 -d "/")
-	file_descr=$(echo $openfile_disk | awk '{ print $9; }' | cut -f 5 -d "/")
-	openpath_disk=$(echo $openfile_disk | awk '{ print $11; }' | cut -f 3 -d "/")
-	openpath="$(readlink /proc/$process_id/fd/$file_descr)"
-	### hard closing file descriptor path
-	if [ "$switch_mode" = "close" ]; then
-		echo "$openpath/ open file will be closed"
-		fdclose $process_id $file_descr
-	fi
-	### hard switching file descriptor path
-	if [ "$switch_mode" = "switch" ]; then
-		echo "open file $filename will be switched $pool now"
-		sleep 1
-		dst=$(echo ${openpath/$openpath_disk/$pool})
-		echo "$dst"
-		if gdb --version > /dev/null 2>&1; then
-			echo "ready to switch live"
-		else
-			echo "Unable to find gdb, check readme"
-			exit 1
+		openfile="/$(echo "${tmp_openfile#*/}")"
+		directory=$(dirname "$openfile")
+		filename=$(basename "$openfile")
+		diskpath=$(find /mnt/disk* -type f -name "$filename")
+		diskname=$(echo $diskpath | awk '{ print $1; }' | cut -f 3 -d "/")
+		if [ "$diskname" == "disks" ]; then
+			subdisk=$(echo $openpath | awk '{ print $1; }' | cut -f 4 -d "/")
+			diskname="$diskname/$subdisk"
 		fi
-		(
-		echo "attach $process_id"
-		echo 'call (int)open("'$dst'", 00|0100|02000, 0666)'
-		echo 'call (int)dup2($1,'$file_descr')'
-		echo 'call (int)close($1)'
-		echo 'detach'; echo 'quit'
-		) | gdb -q -x -
+		poolpath=$(echo ${diskpath/$diskname/$pool})
+		rsync_source=$(dirname "$diskpath")
+		rsync_target=$(dirname "$poolpath")
+		done
+	### break if there is no subfolder match
+	if [ ! -z "$subfolders" ]; then
+		if [[ $(cat $tmp_openfiles | grep -E "$subfolders") == "" ]]; then
+			echo "not matching $subfolders, breaking here"
+			exit;
+		fi
 	fi
+	### break if there is no filetype match
+	if [ ! -z "$filetypes" ]; then
+		if [[ $(cat $tmp_openfiles | grep -E "$filetypes") == "" ]]; then
+			echo "not matching $filetypes, breaking here"
+			exit;
+		fi
+	fi
+	### break if there is a exclusion match
+	if [ ! -z "$exclusions" ]; then
+		if [[ ! $(cat $tmp_openfiles | grep -E "$exclusions") == "" ]]; then
+			echo "matching exclusion $exclusions, breaking here"
+			exit;
+		fi
+	fi
+	### pool lookup and break after update access time
+	if [ -f "$poolpath" ]; then
+		echo "update access time: $rsync_target"
+		touch -a "$rsync_target"
+		directory=$(dirname "$rsync_target")
+		touch -a "$directory"
+		exit;
+	fi
+	### pool only file and break after update access time
+	if [ -z "$diskpath" ]; then
+		echo "update access time pool only dir: $directory"
+		touch -a "$directory"
+		directory=$(dirname "$directory")
+		touch -a "$directory"
+		exit;
+	fi
+	### copy source files to target dir
+	caching_done=""
+	if [ ! -f "$poolpath" ]; then
+		if [ $rsync_mode == "file" ]; then
+			$rsync_copy "$diskpath" "$poolpath"
+			if [ "$unraid_note" = "yes" ]; then
+				/usr/local/emhttp/webGui/scripts/notify -e "Copy File Info" -s "$rsync_target/" -i "normal" &
+			fi
+		else
+			$rsync_copy "$rsync_source/" "$rsync_target/"
+			if [ "$unraid_note" = "yes" ]; then
+				/usr/local/emhttp/webGui/scripts/notify -e "Copy Folder Info" -s "$rsync_target/" -i "normal" &
+			fi
+		fi
+		caching_done="ok"
+	fi
+	### add to mover tuning exclusion
+	if [ "$caching_done" = "ok" ]; then
+		if [ "$move_excl" = "yes" ]; then
+			echo "$rsync_target" >> $move_excl_list  2> /dev/null
+			awk -i inplace '!seen[$0]++' $move_excl_list 2> /dev/null
+		fi
+	fi
+	### lookup for open file descriptor if there is a current access
+	openfile_disk=$(ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "$diskpath" | sed '$!d')
+	### switch file descriptor
+	if [ ! -z "$openfile_disk" ]; then
+		process_id=$(echo $openfile_disk | awk '{ print $9; }' | cut -f 3 -d "/")
+		file_descr=$(echo $openfile_disk | awk '{ print $9; }' | cut -f 5 -d "/")
+		openpath_disk=$(echo $openfile_disk | awk '{ print $11; }' | cut -f 3 -d "/")
+		openpath="$(readlink /proc/$process_id/fd/$file_descr)"
+		### hard closing file descriptor path
+		if [ "$switch_mode" = "close" ]; then
+			echo "$openpath/ open file will be closed"
+			fdclose $process_id $file_descr
+		fi
+		### hard switching file descriptor path
+		if [ "$switch_mode" = "switch" ]; then
+			echo "open file $filename will be switched $pool now"
+			sleep 1
+			dst=$(echo ${openpath/$openpath_disk/$pool})
+			echo "$dst"
+			if gdb --version > /dev/null 2>&1; then
+				echo "ready to switch live"
+			else
+				echo "Unable to find gdb, check readme"
+				exit 1
+			fi
+			(
+			echo "attach $process_id"
+			echo 'call (int)open("'$dst'", 00|0100|02000, 0666)'
+			echo 'call (int)dup2($1,'$file_descr')'
+			echo 'call (int)close($1)'
+			echo 'detach'; echo 'quit'
+			) | gdb -q -x -
+		fi
+	fi
+### done doing
 fi
 ### update mover ignore list ###
 $listupdater
