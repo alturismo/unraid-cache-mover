@@ -58,8 +58,11 @@ fi
 if [ "$mediaserver_type" == "plex" ]; then
 	#echo "$mediaserver_type mode"
 	KEY=$(curl -s "http://$mediaserver_host:$mediaserver_port/status/sessions?X-Plex-Token=$mediaserver_key" 2> /dev/null | grep -oP 'ratingKey="\K[^"]+' | shuf -n 1)
-	curl -s "http://$mediaserver_host:$mediaserver_port/library/metadata/$KEY?X-Plex-Token=$mediaserver_key" 2> /dev/null | grep -oP 'file="\K[^"]+' | grep -E "$subfolders" | sed '$!d' \
+	curl -s "http://$mediaserver_host:$mediaserver_port/library/metadata/$KEY?X-Plex-Token=$mediaserver_key" \
+    2> /dev/null | grep -oP 'file="\K[^"]+' | grep -E "$subfolders" | sed '$!d' | \
+    python3 -c "import sys, html; print(html.unescape(sys.stdin.read().strip()))"
 	> $tmp_openfiles
+
 fi
 ### check if and then do
 if [ -s $tmp_openfiles ]; then
@@ -81,7 +84,8 @@ if [ -s $tmp_openfiles ]; then
 		openfile="/$(echo "${tmp_openfile#*/}")"
 		directory=$(dirname "$openfile")
 		filename=$(basename "$openfile")
-		diskpath=$(find /mnt/disk* -type f -name "$filename")
+		escaped_filename=$(echo "$filename" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
+		diskpath=$(find /mnt/disk* -type f -name "$escaped_filename")
 		diskname=$(echo $diskpath | awk '{ print $1; }' | cut -f 3 -d "/")
 		if [ "$diskname" == "disks" ]; then
 			subdisk=$(echo $openpath | awk '{ print $1; }' | cut -f 4 -d "/")
@@ -93,21 +97,24 @@ if [ -s $tmp_openfiles ]; then
 		done
 	### break if there is no subfolder match
 	if [ ! -z "$subfolders" ]; then
-		if [[ $(cat $tmp_openfiles | grep -E "$subfolders") == "" ]]; then
+		escaped_subfolders=$(echo "$subfolders" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
+		if [[ $(cat $tmp_openfiles | grep -E "$escaped_subfolders") == "" ]]; then
 			echo "not matching $subfolders, breaking here"
 			exit;
 		fi
 	fi
 	### break if there is no filetype match
 	if [ ! -z "$filetypes" ]; then
-		if [[ $(cat $tmp_openfiles | grep -E "$filetypes") == "" ]]; then
+		escaped_filetypes=$(echo "$filetypes" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
+		if [[ $(cat $tmp_openfiles | grep -E "$escaped_filetypes") == "" ]]; then
 			echo "not matching $filetypes, breaking here"
 			exit;
 		fi
 	fi
 	### break if there is a exclusion match
 	if [ ! -z "$exclusions" ]; then
-		if [[ ! $(cat $tmp_openfiles | grep -E "$exclusions") == "" ]]; then
+		escaped_exclusions=$(echo "$exclusions" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
+		if [[ ! $(cat $tmp_openfiles | grep -E "$escaped_exclusions") == "" ]]; then
 			echo "matching exclusion $exclusions, breaking here"
 			exit;
 		fi
