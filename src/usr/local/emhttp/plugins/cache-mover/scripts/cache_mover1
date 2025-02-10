@@ -58,10 +58,10 @@ fi
 if [ "$mediaserver_type" == "plex" ]; then
 	#echo "$mediaserver_type mode"
 	KEY=$(curl -s "http://$mediaserver_host:$mediaserver_port/status/sessions?X-Plex-Token=$mediaserver_key" 2> /dev/null | grep -oP 'ratingKey="\K[^"]+' | shuf -n 1)
-	curl -s "http://$mediaserver_host:$mediaserver_port/library/metadata/$KEY?X-Plex-Token=$mediaserver_key" \
+curl -s "http://$mediaserver_host:$mediaserver_port/library/metadata/$KEY?X-Plex-Token=$mediaserver_key" \
     2> /dev/null | grep -oP 'file="\K[^"]+' | grep -E "$subfolders" | sed '$!d' | \
-    python3 -c "import sys, html; print(html.unescape(sys.stdin.read().strip()))"
-	> $tmp_openfiles
+    python3 -c "import sys, html; print(html.unescape(sys.stdin.read().strip()))" > $tmp_openfiles
+
 
 fi
 ### check if and then do
