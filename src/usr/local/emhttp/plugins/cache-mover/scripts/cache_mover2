@@ -47,7 +47,9 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
 ### check open files on disks
-ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/disk" | grep -E "$subfolders" | grep -E "$filetypes" | sed '$!d' > $tmp_openfiles
+escaped_subfolders=$(echo "$subfolders" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
+escaped_filetypes=$(echo "$filetypes" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
+ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/disk" | grep -E "$escaped_subfolders" | grep -E "$escaped_filetypes" | sed '$!d' > $tmp_openfiles
 ### lookup openfile, abort if empty and rm temp openfiles
 if [ ! -s $tmp_openfiles ]; then
 	ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/$pool" | grep -E "$subfolders" | grep -E "$filetypes" | sed '$!d' > $tmp_openfiles
@@ -64,7 +66,9 @@ if [ -s $tmp_openfiles ]; then
 	### wait and look if file is still open
 	sleep $wait_todo
 	### check open files on disks (checkup)
-	ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/disk" | grep -E "$subfolders" | grep -E "$filetypes" | sed '$!d' > $tmp_openfiles
+	escaped_subfolders=$(echo "$subfolders" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
+escaped_filetypes=$(echo "$filetypes" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
+ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/disk" | grep -E "$escaped_subfolders" | grep -E "$escaped_filetypes" | sed '$!d' > $tmp_openfiles
 	if [ ! -s $tmp_openfiles ]; then
 		ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "/$pool" | grep -E "$subfolders" | grep -E "$filetypes" | sed '$!d' > $tmp_openfiles
 		if [ ! -s $tmp_openfiles ]; then
@@ -106,21 +110,24 @@ fi
 if [ -s $tmp_openfiles ]; then
 	### break if there is no subfolder match
 	if [ ! -z "$subfolders" ]; then
-		if [[ $(cat $tmp_openfiles | grep -E "$subfolders") == "" ]]; then
+		escaped_subfolders=$(echo "$subfolders" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
+		if [[ $(cat $tmp_openfiles | grep -E "$escaped_subfolders") == "" ]]; then
 			echo "not matching $subfolders, breaking here"
 			exit;
 		fi
 	fi
 	### break if there is no filetype match
 	if [ ! -z "$filetypes" ]; then
-		if [[ $(cat $tmp_openfiles | grep -E "$filetypes") == "" ]]; then
+		escaped_filetypes=$(echo "$filetypes" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
+		if [[ $(cat $tmp_openfiles | grep -E "$escaped_filetypes") == "" ]]; then
 			echo "not matching $filetypes, breaking here"
 			exit;
 		fi
 	fi
 	### break if there is a exclusion match
 	if [ ! -z "$exclusions" ]; then
-		if [[ ! $(cat $tmp_openfiles | grep -E "$exclusions") == "" ]]; then
+		escaped_exclusions=$(echo "$exclusions" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
+		if [[ ! $(cat $tmp_openfiles | grep -E "$escaped_exclusions") == "" ]]; then
 			echo "matching exclusion $exclusions, breaking here"
 			exit;
 		fi
