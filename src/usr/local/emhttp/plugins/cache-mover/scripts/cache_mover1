@@ -134,12 +134,12 @@ if [ -s $tmp_openfiles ]; then
 		if [ $rsync_mode == "file" ]; then
 			$rsync_copy "$diskpath" "$poolpath"
 			if [ "$unraid_note" = "yes" ]; then
-				/usr/local/emhttp/webGui/scripts/notify -e "Copy File Info" -s "$rsync_target/" -i "normal" &
+				/usr/local/emhttp/webGui/scripts/notify -e "Cache Mover Info" -s "Copy File" -d "$rsync_target/" -i "normal" &
 			fi
 		else
 			$rsync_copy "$rsync_source/" "$rsync_target/"
 			if [ "$unraid_note" = "yes" ]; then
-				/usr/local/emhttp/webGui/scripts/notify -e "Copy Folder Info" -s "$rsync_target/" -i "normal" &
+				/usr/local/emhttp/webGui/scripts/notify -e "Cache Mover Info" -s "Copy Folder" -d "$rsync_target/" -i "normal" &
 			fi
 		fi
 		caching_done="ok"
