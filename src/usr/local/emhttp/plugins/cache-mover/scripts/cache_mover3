@@ -27,92 +27,89 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
 ### check age and move back / delete
-IFS=$'\n'
 targetdir=""
 
-for folder in $(cat "$move_excl_list")
-	do
-	find "$folder/" -type d -empty -delete
-	if [ -d $folder ]; then
-		last_access=$[$(date +%s)-$(stat --printf "%X" "$folder/")]
-		last_access=$(echo $last_access | awk '{printf "%d", $1/3600}')
-		keephours=""
-		if [[ "$folder" =~ "$subfolder_keep_sub/" ]]; then
-			keephours=$time_keephours_sub
-		else
-			keephours=$time_keephours
-		fi
-		if [ ! -z $target_keephours ]; then
-			targetdir=$(echo ${folder/$pool/$target_keephours})
-		else
-			targetdir=$(echo ${folder/"/mnt/$pool"/})
-			targetdir=$(ls -d /mnt/disk*/$targetdir | grep -v "$pool") 2> /dev/null
-			if [ -z $targetdir ];then
-				targetdir=$(ls -d /mnt/disk*/*/$targetdir | grep -v "$pool") 2> /dev/null
-			fi
-		fi
-		if [ $last_access -gt $keephours ]; then
-			if [ -d $targetdir/ ]; then
-				if [ $(du -sh $folder/ | sed 's/\s.*$//') == $(du -sh $targetdir/ | sed 's/\s.*$//') ]; then
-					echo "$targetdir equal in size, removing from $pool";
-					if [ "$use_recycle" = "yes" ]; then
-						recycle_target=""
-						recycle_target="/mnt/$pool/$recycle_folder/"
-						recycle_target="$recycle_target$(ls -d "$folder" | cut -f 4,5,6,7,8,9,10,11,12 -d "/")"
-						echo "Recycle to $recycle_target"
-						if [ "$unraid_note" = "yes" ]; then
-							/usr/local/emhttp/webGui/scripts/notify -e "Recycle Note" -s "$recycle_target/" -i "normal" &
-						fi
-						mkdir -p "$recycle_target"
-						recycle_target=$(dirname $recycle_target)
-						mv "$folder/" "$recycle_target/" 2> /dev/null	## move pool files into recycle dir
-						rm -r "$folder/" 2> /dev/null
-						folder_to_remove=$(echo "$folder" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
-						grep -v "$folder_to_remove" $move_excl_list > temp_show_list
-						mv temp_show_list $move_excl_list
-					else
-						echo "removing $folder"
-						if [ "$unraid_note" = "yes" ]; then
-							/usr/local/emhttp/webGui/scripts/notify -e "Remove Note" -s "$folder/" -i "normal" &
-						fi
-						rm -r "$folder/" 2> /dev/null			## wipe from pool only
-						upfolder=$(dirname "$folder")
-						find "$upfolder/" -type d -empty -delete 2> /dev/null
-						folder_to_remove=$(echo "$folder" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
-						grep -v "$folder_to_remove" $move_excl_list > temp_show_list
-						mv temp_show_list $move_excl_list
-					fi
-				else
-					echo "$folder $last_access ago size doesnt match on disk, please check manually"
-					if [ "$unraid_note" = "yes" ]; then
-						/usr/local/emhttp/webGui/scripts/notify -e "Check Note" -s "$targetdir/" -i "normal" &
-					fi
-					find "$folder/" -type d -empty -delete 2> /dev/null
-					upfolder=$(dirname "$folder")
-					find "$upfolder/" -type d -empty -delete 2> /dev/null
-					folder_to_remove=$(echo "$folder" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
-					grep -v "$folder_to_remove" $move_excl_list > temp_show_list
-					mv temp_show_list $move_excl_list
-				fi
-			else
-				echo "$folder $last_access ago doesnt exist on disk/s, please check manually"
-				if [ "$unraid_note" = "yes" ]; then
-					/usr/local/emhttp/webGui/scripts/notify -e "Check Note" -s "$targetdir/" -i "normal" &
-				fi
-				folder_to_remove=$(echo "$folder" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
-				grep -v "$folder_to_remove" $move_excl_list > temp_show_list
-				mv temp_show_list $move_excl_list
-			fi
-		else
-			echo "$folder $last_access still in range"
-		fi
-	else
-		echo "$folder is not there"
-		folder_to_remove=$(echo "$folder" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
-		grep -v "$folder_to_remove" $move_excl_list > temp_show_list
-		mv temp_show_list $move_excl_list
-	fi
-	done
+while IFS= read -r folder; do
+    [ -z "$folder" ] && continue  # Skip empty lines
+
+    find "$folder/" -type d -empty -delete
+    if [ -d "$folder" ]; then
+        last_access=$(( $(date +%s) - $(stat --printf "%X" "$folder/") ))
+        last_access=$(echo "$last_access" | awk '{printf "%d", $1/3600}')
+        keephours=""
+        if [[ "$folder" =~ "$subfolder_keep_sub/" ]]; then
+            keephours=$time_keephours_sub
+        else
+            keephours=$time_keephours
+        fi
+        if [ -n "$target_keephours" ]; then
+            targetdir="${folder/$pool/$target_keephours}"
+        else
+            targetdir="${folder/"/mnt/$pool"/}"
+            targetdir=$(ls -d "/mnt/disk${targetdir}" 2>/dev/null | grep -v "$pool")
+            if [ -z "$targetdir" ]; then
+                targetdir=$(ls -d "/mnt/disk*/*/${targetdir}" 2>/dev/null | grep -v "$pool")
+            fi
+        fi
+        if [ "$last_access" -gt "$keephours" ]; then
+            if [ -d "$targetdir/" ]; then
+                if [ "$(du -sh "$folder/" | sed 's/\s.*$//')" == "$(du -sh "$targetdir/" | sed 's/\s.*$//')" ]; then
+                    echo "$targetdir equal in size, removing from $pool"
+                    if [ "$use_recycle" = "yes" ]; then
+                        recycle_target="/mnt/$pool/$recycle_folder/$(echo "$folder" | cut -f 4- -d "/")"
+                        echo "Recycle to $recycle_target"
+                        if [ "$unraid_note" = "yes" ]; then
+                            /usr/local/emhttp/webGui/scripts/notify -e "Recycle Note" -s "$recycle_target/" -i "normal" &
+                        fi
+                        mkdir -p "$(dirname "$recycle_target")"
+                        mv "$folder/" "$recycle_target" 2>/dev/null
+                        rm -rf "$folder/" 2>/dev/null
+                        # Remove folder from exclusion list using exact match
+                        grep -F -v "$folder" "$move_excl_list" > temp_show_list
+                        mv temp_show_list "$move_excl_list"
+                    else
+                        echo "removing $folder"
+                        if [ "$unraid_note" = "yes" ]; then
+                            /usr/local/emhttp/webGui/scripts/notify -e "Remove Note" -s "$folder/" -i "normal" &
+                        fi
+                        rm -rf "$folder/" 2>/dev/null
+                        upfolder=$(dirname "$folder")
+                        find "$upfolder/" -type d -empty -delete 2>/dev/null
+                        # Remove folder from exclusion list using exact match
+                        grep -F -v "$folder" "$move_excl_list" > temp_show_list
+                        mv temp_show_list "$move_excl_list"
+                    fi
+                else
+                    echo "$folder $last_access ago size doesnt match on disk, please check manually"
+                    if [ "$unraid_note" = "yes" ]; then
+                        /usr/local/emhttp/webGui/scripts/notify -e "Check Note" -s "$targetdir/" -i "normal" &
+                    fi
+                    find "$folder/" -type d -empty -delete 2>/dev/null
+                    upfolder=$(dirname "$folder")
+                    find "$upfolder/" -type d -empty -delete 2>/dev/null
+                    # Remove folder from exclusion list using exact match
+                    grep -F -v "$folder" "$move_excl_list" > temp_show_list
+                    mv temp_show_list "$move_excl_list"
+                fi
+            else
+                echo "$folder $last_access ago doesnt exist on disk/s, please check manually"
+                if [ "$unraid_note" = "yes" ]; then
+                    /usr/local/emhttp/webGui/scripts/notify -e "Check Note" -s "$targetdir/" -i "normal" &
+                fi
+                # Remove folder from exclusion list using exact match
+                grep -F -v "$folder" "$move_excl_list" > temp_show_list
+                mv temp_show_list "$move_excl_list"
+            fi
+        else
+            echo "$folder $last_access still in range"
+        fi
+    else
+        echo "$folder is not there"
+        # Remove folder from exclusion list using exact match
+        grep -F -v "$folder" "$move_excl_list" > temp_show_list
+        mv temp_show_list "$move_excl_list"
+    fi
+done < "$move_excl_list"
 
 ### update mover ignore list ###
 $listupdater
