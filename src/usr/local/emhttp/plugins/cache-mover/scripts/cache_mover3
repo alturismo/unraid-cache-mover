@@ -67,7 +67,7 @@ for folder in $(cat "$move_excl_list")
 						recycle_target=$(dirname $recycle_target)
 						mv "$folder/" "$recycle_target/" 2> /dev/null	## move pool files into recycle dir
 						rm -r "$folder/" 2> /dev/null
-						folder_to_remove=$(echo "$folder" | sed 's/[][]/\\&/g')
+						folder_to_remove=$(echo "$folder" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
 						grep -v "$folder_to_remove" $move_excl_list > temp_show_list
 						mv temp_show_list $move_excl_list
 					else
@@ -78,7 +78,7 @@ for folder in $(cat "$move_excl_list")
 						rm -r "$folder/" 2> /dev/null			## wipe from pool only
 						upfolder=$(dirname "$folder")
 						find "$upfolder/" -type d -empty -delete 2> /dev/null
-						folder_to_remove=$(echo "$folder" | sed 's/[][]/\\&/g')
+						folder_to_remove=$(echo "$folder" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
 						grep -v "$folder_to_remove" $move_excl_list > temp_show_list
 						mv temp_show_list $move_excl_list
 					fi
@@ -90,7 +90,7 @@ for folder in $(cat "$move_excl_list")
 					find "$folder/" -type d -empty -delete 2> /dev/null
 					upfolder=$(dirname "$folder")
 					find "$upfolder/" -type d -empty -delete 2> /dev/null
-					folder_to_remove=$(echo "$folder" | sed 's/[][]/\\&/g')
+					folder_to_remove=$(echo "$folder" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
 					grep -v "$folder_to_remove" $move_excl_list > temp_show_list
 					mv temp_show_list $move_excl_list
 				fi
@@ -99,7 +99,7 @@ for folder in $(cat "$move_excl_list")
 				if [ "$unraid_note" = "yes" ]; then
 					/usr/local/emhttp/webGui/scripts/notify -e "Cache Mover Info" -s "Check Note" -d "$targetdir/" -i "normal" &
 				fi
-				folder_to_remove=$(echo "$folder" | sed 's/[][]/\\&/g')
+				folder_to_remove=$(echo "$folder" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
 				grep -v "$folder_to_remove" $move_excl_list > temp_show_list
 				mv temp_show_list $move_excl_list
 			fi
@@ -108,7 +108,7 @@ for folder in $(cat "$move_excl_list")
 		fi
 	else
 		echo "$folder is not there"
-		folder_to_remove=$(echo "$folder" | sed 's/[][]/\\&/g')
+		folder_to_remove=$(echo "$folder" | sed 's/\[/\\[/g; s/\]/\\]/g; s/{/\\{/g; s/}/\\}/g')
 		grep -v "$folder_to_remove" $move_excl_list > temp_show_list
 		mv temp_show_list $move_excl_list
 	fi
