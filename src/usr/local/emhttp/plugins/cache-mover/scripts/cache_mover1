@@ -66,6 +66,12 @@ curl -s "http://$mediaserver_host:$mediaserver_port/library/metadata/$KEY?X-Plex
 fi
 ### check if and then do
 if [ -s $tmp_openfiles ]; then
+    ### Exit if tmp_openfiles is empty or whitespace-only
+    if [ ! -s "$tmp_openfiles" ] || [[ "$(cat $tmp_openfiles)" =~ ^[[:space:]]*$ ]]; then
+        echo "No active playback detected. Exiting."
+        exit 0
+    fi
+
 	### rewrite Mediaserver mount path if not 1:1
 	if [ -n "$rewrite_source" ]; then
 		for rewrite in $rewrite_source
