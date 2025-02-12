@@ -61,7 +61,7 @@ for folder in $(cat "$move_excl_list")
 						recycle_target="$recycle_target$(ls -d "$folder" | cut -f 4,5,6,7,8,9,10,11,12 -d "/")"
 						echo "Recycle to $recycle_target"
 						if [ "$unraid_note" = "yes" ]; then
-							/usr/local/emhttp/webGui/scripts/notify -e "Recycle Note" -s "$recycle_target/" -i "normal" &
+							/usr/local/emhttp/webGui/scripts/notify -e "Cache Mover Info" -s "Recycle Note" -d "$recycle_target/" -i "normal" &
 						fi
 						mkdir -p "$recycle_target"
 						recycle_target=$(dirname $recycle_target)
@@ -73,7 +73,7 @@ for folder in $(cat "$move_excl_list")
 					else
 						echo "removing $folder"
 						if [ "$unraid_note" = "yes" ]; then
-							/usr/local/emhttp/webGui/scripts/notify -e "Remove Note" -s "$folder/" -i "normal" &
+							/usr/local/emhttp/webGui/scripts/notify -e "Cache Mover Info" -s "Remove Note" -d "$folder/" -i "normal" &
 						fi
 						rm -r "$folder/" 2> /dev/null			## wipe from pool only
 						upfolder=$(dirname "$folder")
@@ -85,7 +85,7 @@ for folder in $(cat "$move_excl_list")
 				else
 					echo "$folder $last_access ago size doesnt match on disk, please check manually"
 					if [ "$unraid_note" = "yes" ]; then
-						/usr/local/emhttp/webGui/scripts/notify -e "Check Note" -s "$targetdir/" -i "normal" &
+						/usr/local/emhttp/webGui/scripts/notify -e "Cache Mover Info" -s "Check Note" -d "$targetdir/" -i "normal" &
 					fi
 					find "$folder/" -type d -empty -delete 2> /dev/null
 					upfolder=$(dirname "$folder")
@@ -97,7 +97,7 @@ for folder in $(cat "$move_excl_list")
 			else
 				echo "$folder $last_access ago doesnt exist on disk/s, please check manually"
 				if [ "$unraid_note" = "yes" ]; then
-					/usr/local/emhttp/webGui/scripts/notify -e "Check Note" -s "$targetdir/" -i "normal" &
+					/usr/local/emhttp/webGui/scripts/notify -e "Cache Mover Info" -s "Check Note" -d "$targetdir/" -i "normal" &
 				fi
 				folder_to_remove=$(echo "$folder" | sed 's/[][]/\\&/g')
 				grep -v "$folder_to_remove" $move_excl_list > temp_show_list

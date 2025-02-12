@@ -154,7 +154,7 @@ if [ ! -f "$poolpath" ]; then
 		$rsync_copy "$rsync_source/" "$rsync_target/"
 	fi
 	if [ "$unraid_note" = "yes" ]; then
-		/usr/local/emhttp/webGui/scripts/notify -e "Copy Note" -s "$rsync_target/" -i "normal" &
+		/usr/local/emhttp/webGui/scripts/notify -e "Cache Mover Info" -s "Copy Note" -d "$rsync_target/" -i "normal" &
 	fi
 	caching_done="ok"
 fi
