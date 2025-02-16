@@ -35,14 +35,18 @@ touch $move_tune_list
 chmod 777 $move_excl_list
 chmod 777 $move_tune_list
 
+### temp lists
+tmplist="/usr/local/emhttp/plugins/cache-mover/tmp_list.txt"
+
 ### update mover ignore list ###
 if [ "$move_excl" = "yes" ]; then
 mover_source_files="$move_excl_list $move_tune_list"
 ### cleaning mover tuning list from empty directoty entries
 	cat $move_tune_list | while read directorys
 		do
-			if [[ ! -d $directorys ]]; then
-				sed -i "s|$directorys||g" $move_tune_list 2> /dev/null
+			if [[ ! -d "$directorys" ]]; then
+			echo "$directorys is NOT here"
+				grep -xFv -- "$directorys" $move_tune_list  > "$tmplist" && mv "$tmplist" $move_tune_list
 			fi
 		sed -i '/^[[:space:]]*$/d' $move_tune_list 2> /dev/null
 		done

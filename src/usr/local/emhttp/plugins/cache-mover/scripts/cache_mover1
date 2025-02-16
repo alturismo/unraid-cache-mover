@@ -31,6 +31,7 @@ pool="${pool%/}"
 ################################
 tmp_openfiles="/usr/local/emhttp/plugins/cache-mover/tmp_openfiles2.txt"
 check_openfiles="/usr/local/emhttp/plugins/cache-mover/check_openfiles2.txt"
+proc_openfiles="/usr/local/emhttp/plugins/cache-mover/proc_openfiles.txt"
 
 ### rm openfiles
 rm $tmp_openfiles 2> /dev/null
@@ -45,11 +46,14 @@ if [ "$mediaserver_type" == "" ] || [ "$mediaserver_host" == "" ] || [ "$mediase
 	echo "please fill all fields, type, host, port, key, aborting here"
 	exit;
 fi
-
+### Lookup HTTP/s type
+if [ "$mediaserver_url" == "" ]; then
+	mediaserver_url="http"
+fi
 ### emby / jelly openfile
 if [ "$mediaserver_type" == "jelly" ] || [ "$mediaserver_type" == "emby" ]; then
 	#echo "$mediaserver_type mode"
-	wget -q -O - "http://$mediaserver_host:$mediaserver_port/emby/Sessions?api_key=$mediaserver_key" | \
+	wget -q -O - "$mediaserver_url://$mediaserver_host:$mediaserver_port/emby/Sessions?api_key=$mediaserver_key" | \
 	jq '.[] | {NowPlayingItem: .NowPlayingItem.Path} | select(.NowPlayingItem!=null)' | \
 	sed 's|{||g;s|}||g;s|"NowPlayingItem":||g;s|"||g;s|^[ \t]*||;/^[[:space:]]*$/d' | shuf -n 1 \
 	> $tmp_openfiles
@@ -57,8 +61,8 @@ fi
 ### plex openfile
 if [ "$mediaserver_type" == "plex" ]; then
 	#echo "$mediaserver_type mode"
-	KEY=$(curl -s "http://$mediaserver_host:$mediaserver_port/status/sessions?X-Plex-Token=$mediaserver_key" 2> /dev/null | grep -oP 'ratingKey="\K[^"]+' | shuf -n 1)
-	curl -s "http://$mediaserver_host:$mediaserver_port/library/metadata/$KEY?X-Plex-Token=$mediaserver_key" 2> /dev/null | grep -oP 'file="\K[^"]+' | grep -E "$subfolders" | sed '$!d' \
+	KEY=$(curl -s "$mediaserver_url://$mediaserver_host:$mediaserver_port/status/sessions?X-Plex-Token=$mediaserver_key" 2> /dev/null | grep -oP 'ratingKey="\K[^"]+' | shuf -n 1)
+	curl -s "$mediaserver_url://$mediaserver_host:$mediaserver_port/library/metadata/$KEY?X-Plex-Token=$mediaserver_key" 2> /dev/null | grep -oP 'file="\K[^"]+' | grep -E "$subfolders" | sed '$!d' | python3 -c "import sys, html; print(html.unescape(sys.stdin.read().strip()))" \
 	> $tmp_openfiles
 fi
 ### check if and then do
@@ -152,7 +156,8 @@ if [ -s $tmp_openfiles ]; then
 		fi
 	fi
 	### lookup for open file descriptor if there is a current access
-	openfile_disk=$(ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -i "$diskpath" | sed '$!d')
+	ls -alrt /proc/[0-9]*/fd/* 2> /dev/null | grep -E "$subfolders" | grep -E "$filetypes" > $proc_openfiles
+	openfile_disk=$(cat $proc_openfiles | grep -Fi "$diskpath")
 	### switch file descriptor
 	if [ ! -z "$openfile_disk" ]; then
 		process_id=$(echo $openfile_disk | awk '{ print $9; }' | cut -f 3 -d "/")

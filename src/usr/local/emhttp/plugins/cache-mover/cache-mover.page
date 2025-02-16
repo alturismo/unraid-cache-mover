@@ -40,6 +40,7 @@ $cachemoversettings_clean_cron        = isset($cachemoversettings['clean_cron'])
 $cachemoversettings_rsync_copy        = isset($cachemoversettings['rsync_copy']) ? $cachemoversettings['rsync_copy'] : "";
 // cache MediaServer
 $cachemoversettings_mediaserver_type        = isset($cachemoversettings['mediaserver_type']) ? $cachemoversettings['mediaserver_type'] : "";
+$cachemoversettings_mediaserver_url       = isset($cachemoversettings['mediaserver_url']) ? $cachemoversettings['mediaserver_url'] : "";
 $cachemoversettings_mediaserver_host        = isset($cachemoversettings['mediaserver_host']) ? $cachemoversettings['mediaserver_host'] : "";
 $cachemoversettings_mediaserver_port        = isset($cachemoversettings['mediaserver_port']) ? $cachemoversettings['mediaserver_port'] : "";
 $cachemoversettings_mediaserver_key        = isset($cachemoversettings['mediaserver_key']) ? $cachemoversettings['mediaserver_key'] : "";
@@ -174,6 +175,12 @@ Media Server Type:
 : <input type="text" name="mediaserver_type" class="narrow" maxlength="99" value="<?=$cachemoversettings_mediaserver_type;?>" placeholder="jelly emby plex" >
     <blockquote class='inline_help'>
         <p>either jelly, emby or plex as Mediaserver Type</p>
+    </blockquote>
+
+Media Server URL(Type):
+: <input type="text" name="mediaserver_url" class="narrow" maxlength="5" value="<?=$cachemoversettings_mediaserver_url;?>" placeholder="http https" >
+    <blockquote class='inline_help'>
+        <p>URL Type, http OR https, default http</p>
     </blockquote>
 
 Media Server Host(IP):
