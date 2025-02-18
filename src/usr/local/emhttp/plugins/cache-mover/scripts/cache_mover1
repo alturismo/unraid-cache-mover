@@ -54,17 +54,18 @@ fi
 if [ "$mediaserver_type" == "jelly" ] || [ "$mediaserver_type" == "emby" ]; then
 	#echo "$mediaserver_type mode"
 	wget -q -O - "$mediaserver_url://$mediaserver_host:$mediaserver_port/emby/Sessions?api_key=$mediaserver_key" | \
-	jq '.[] | {NowPlayingItem: .NowPlayingItem.Path} | select(.NowPlayingItem!=null)' | \
-	sed 's|{||g;s|}||g;s|"NowPlayingItem":||g;s|"||g;s|^[ \t]*||;/^[[:space:]]*$/d' | shuf -n 1 \
+	jq -r '.[] | select(.NowPlayingItem != null) | .NowPlayingItem.Path' | shuf -n 1 \
 	> $tmp_openfiles
+	sed -i '/^$/d' $tmp_openfiles 2> /dev/null
 fi
 ### plex openfile
 if [ "$mediaserver_type" == "plex" ]; then
 	#echo "$mediaserver_type mode"
 	KEY=$(curl -s "$mediaserver_url://$mediaserver_host:$mediaserver_port/status/sessions?X-Plex-Token=$mediaserver_key" 2> /dev/null | grep -oP 'ratingKey="\K[^"]+' | shuf -n 1)
-	curl -s "$mediaserver_url://$mediaserver_host:$mediaserver_port/library/metadata/$KEY?X-Plex-Token=$mediaserver_key" 2> /dev/null | grep -oP 'file="\K[^"]+' | grep -E "$subfolders" | sed '$!d' | python3 -c "import sys, html; print(html.unescape(sys.stdin.read().strip()))" \
+	curl -s "$mediaserver_url://$mediaserver_host:$mediaserver_port/library/metadata/$KEY?X-Plex-Token=$mediaserver_key" 2> /dev/null | grep -oP 'file="\K[^"]+' | grep -E "$subfolders" | \
+	sed '$!d' | python3 -c "import sys, html; print(html.unescape(sys.stdin.read().strip()))" \
 	> $tmp_openfiles
-	sed -i '/^$/d' $tmp_openfiles
+	sed -i '/^$/d' $tmp_openfiles 2> /dev/null
 fi
 ### check if and then do
 if [ -s $tmp_openfiles ]; then
