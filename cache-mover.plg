@@ -20,6 +20,9 @@
         support="https://forums.unraid.net/topic/181843-support-alturismo-repos/">
  
 <CHANGES>
+ ###2025.09.06
+  - python cross check - skip if already installed
+
  ###2025.02.18
   - small emby / jelly return fix
 
@@ -204,7 +207,12 @@
       echo "| File does not exist, downloading now ..."
       curl -o /boot/config/plugins/cache-mover/$libuni_package https://raw.githubusercontent.com/alturismo/unraid-cache-mover/master/packages/$libuni_package
     fi
-    installpkg /boot/config/plugins/cache-mover/$python_package
+    if [ ! -e /boot/config/plugins/dwpython.plg ] &amp;&amp; ! type python3 >/dev/null 2>&amp;1 &amp;&amp; ! compgen -G "/boot/extra/python*" >/dev/null 2>&amp;1; then
+      # install python only if not installed by other plugin or /boot/extra or already installed
+      installpkg /boot/config/plugins/cache-mover/$python_package
+    else
+      echo "| python already existent"
+    fi
     installpkg /boot/config/plugins/cache-mover/$libffi_package
     installpkg /boot/config/plugins/cache-mover/$libuni_package
   else
@@ -218,7 +226,12 @@
       echo "| File does not exist, downloading now ..."
       curl -o /boot/config/plugins/cache-mover/$python_package https://raw.githubusercontent.com/alturismo/unraid-cache-mover/master/packages/$python_package
     fi
-    installpkg /boot/config/plugins/cache-mover/$python_package
+    if [ ! -e /boot/config/plugins/dwpython.plg ] &amp;&amp; ! type python3 >/dev/null 2>&amp;1 &amp;&amp; ! compgen -G "/boot/extra/python*" >/dev/null 2>&amp;1; then
+      # install python only if not installed by other plugin or /boot/extra or already installed
+      installpkg /boot/config/plugins/cache-mover/$python_package
+    else
+      echo "| python already existent"
+    fi
   fi
   echo "+=============================================================================="
 
