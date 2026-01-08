@@ -9,15 +9,16 @@ https://raw.githubusercontent.com/alturismo/unraid-cache-mover/master/cache-move
 ```
 
 ## Usage
-once setted up, Media Files from Array disks (HDD) can be copied or moved to a pool ssd,
-the plugin can either
-live switch internally to cache (/mnt/user/... access is mandatory for Media Server, Players, ...) 
-hard cut internally file access, Player will stall and you know when to stop, start ... pool reading will be active now
-do nothing, you have to manually know when you want to stop, start to use pool instead array disks
+Once setted up, Media Files from Array disks (HDD) can be copied or moved to a pool ssd.
+
+The plugin can either (switch mode options):
+1) `switch` - Live switch internally to cache (/mnt/user/... access is mandatory for Media Server, Players, ...) 
+2) `close` - Hard cut file access internally. Player will stall and you will know when to stop/start - Pool reading will then be active now.
+3) `nothing` - Do nothing. You have to manually know when you want to stop/start to use pool instead array disks.
 
 ### Preparation
 step by step through the setup options
-mover tuning exclusions are buildin, if not in use, consider your mover settings (files get moved back ...)
+mover tuning exclusions are builtin, if not in use, consider your mover settings (files get moved back ...)
 ```
 Settings --> Cache Mover
 ```
