@@ -105,30 +105,37 @@
 
 <FILE Name="&plgPATH;/&plgNAME;.txz" Run="upgradepkg --install-new">
 <URL>&gitURL;/packages/&name;.txz</URL>
+<SHA256>0b131b34aa99914d4812e5a34c79dc3aed135fbc27af1dea56619f5fed6aeb7b</SHA256>
 </FILE>
 
 <FILE Name="&plgPATH;/fdclose.txz" Run="upgradepkg --install-new" Min="6.12.13">
 <URL>&gitURL;/packages/fdclose.txz</URL>
+<SHA256>ef1d5f790afb3d122de51aa062e31a3f184b89eb1ed633372ca27a1df1e315d6</SHA256>
 </FILE>
 
 <FILE Name="&plgPATH;/gdb-15.2-x86_64-3.txz" Run="upgradepkg --install-new" Min="6.13.0">
 <URL>&gitURL;/packages/gdb-15.2-x86_64-3.txz</URL>
+<SHA256>88f0417bb73d1fc6c0f6a955f0ff6b3667a17698162ba0340079c1cf9628c4a1</SHA256>
 </FILE>
 
 <FILE Name="&plgPATH;/gdb-11.2-x86_64-1.txz" Run="upgradepkg --install-new" Max="6.12.99">
 <URL>&gitURL;/packages/gdb-11.2-x86_64-1.txz</URL>
+<SHA256>3254a94abbcb6cfb4131c5fd344f8d2b918eb24a1edaadce028400fec717b85e</SHA256>
 </FILE>
 
 <FILE Name="&plgPATH;/guile-3.0.7-x86_64-1.txz" Run="upgradepkg --install-new" Max="6.12.99">
 <URL>&gitURL;/packages/guile-3.0.7-x86_64-1.txz</URL>
+<SHA256>0eea2f012a5dedce2d6e2e1ab44b2117b600db7525252046ee3a1672017dbcfe</SHA256>
 </FILE>
 
 <FILE Name="&plgPATH;/gc-8.0.6-x86_64-1.txz" Run="upgradepkg --install-new" Max="6.12.99">
 <URL>&gitURL;/packages/gc-8.0.6-x86_64-1.txz</URL>
+<SHA256>6d2a42f187642ac31d602b49d34502a5c28579a29b24409f79e40a88034f27ae</SHA256>
 </FILE>
 
 <FILE Name="&plgPATH;/elfutils-0.186-x86_64-1.txz" Run="upgradepkg --install-new" Max="6.12.99">
 <URL>&gitURL;/packages/elfutils-0.186-x86_64-1.txz</URL>
+<SHA256>1e1ace4137fd39afb32c9de36f82f0c86a3ecb084841d5e420490c1ca5d7c33f</SHA256>
 </FILE>
 
 <FILE Run="/bin/bash">
