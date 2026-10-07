@@ -172,9 +172,9 @@ Expire Target Dir:
 <div class="title"><span class="left"><i class="fa fa-hand-peace-o title"></i>Cache Mover Setup - Media Server</span></div>
 
 Media Server Type:
-: <input type="text" name="mediaserver_type" class="narrow" maxlength="99" value="<?=$cachemoversettings_mediaserver_type;?>" placeholder="jelly emby plex" >
+: <input type="text" name="mediaserver_type" class="narrow" maxlength="99" value="<?=$cachemoversettings_mediaserver_type;?>" placeholder="jelly jelly12 emby plex" >
     <blockquote class='inline_help'>
-        <p>either jelly, emby or plex as Mediaserver Type</p>
+        <p>either jelly, jelly12, emby or plex as Mediaserver Type</p>
     </blockquote>
 
 Media Server URL(Type):

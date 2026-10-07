@@ -58,6 +58,18 @@ if [ "$mediaserver_type" == "jelly" ] || [ "$mediaserver_type" == "emby" ]; then
 	> $tmp_openfiles
 	sed -i '/^$/d' $tmp_openfiles 2> /dev/null
 fi
+### jelly12 openfile
+if [ "$mediaserver_type" == "jelly12" ]; then
+    # Jellyfin 12 API
+    curl -s \
+        -H "Authorization: MediaBrowser Token=$mediaserver_key" \
+        "$mediaserver_url://$mediaserver_host:$mediaserver_port/Sessions" | \
+    jq -r '.[] | select(.NowPlayingItem != null) | .NowPlayingItem.Path' | \
+    shuf -n 1 \
+    > "$tmp_openfiles"
+
+    sed -i '/^$/d' "$tmp_openfiles" 2>/dev/null
+fi
 ### plex openfile
 if [ "$mediaserver_type" == "plex" ]; then
 	#echo "$mediaserver_type mode"
